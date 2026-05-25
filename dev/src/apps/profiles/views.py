@@ -1,0 +1,142 @@
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.decorators import api_view, permission_classes
+
+from apps.accounts.utils import (
+    ROLE_MAP,
+    decode_uid,
+)
+
+from apps.accounts.models import (
+    Profile
+)
+
+from .serializers import (
+    IndividualProfileSerializer,
+    IndividualProfilePostSetupSerializer,
+    IndividualProfileDetailsSerializer,
+    EntrepriseProfileSerializer,
+    EnterpriseVerificationSerializer,
+    EnterpriseProfileDetailsSerializer,
+    )
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def profileSetup(request):
+    role_param = request.data.get("role", "").lower()
+
+    if not(role_param in ROLE_MAP):
+        return Response({
+            "error": "invalid role"
+            }, status=status.HTTP_400_BAD_REQUEST
+            )
+
+    role = ROLE_MAP[role_param]
+
+    if role == Profile.Role.INDIVIDUAL:
+        serializer = IndividualProfileSerializer(data=request.data, context={"request":request})
+    else:
+        serializer = EntrepriseProfileSerializer(data=request.data, context={"request":request})
+
+    if serializer.is_valid():
+        serializer.save()
+        return Response({
+            "detail": "Successful profile setup"
+            },
+            status=status.HTTP_201_CREATED,
+            )
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def postProfileSetup(request):
+    profile = request.user.profile
+    role = profile.role
+
+    if role == Profile.Role.INDIVIDUAL:
+        instance = request.user.profile.individualprofile
+        serializer = IndividualProfilePostSetupSerializer(data=request.data)
+
+    else:
+        instance = request.user.profile.enterpriseprofile
+        serializer = EnterpriseVerificationSerializer(data=request.data, instance=instance, partial=True)
+
+    if serializer.is_valid():
+        if role == Profile.Role.INDIVIDUAL:
+            serializer.save(instance=instance)
+        else:
+            serializer.save()
+
+        return Response({
+                "detail":"Success post setup"
+                }, status=status.HTTP_201_CREATED)
+
+
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["PATCH", "PUT"])
+@permission_classes([IsAuthenticated])
+def profileEdit(request):
+    profile = request.user.profile
+    role = profile.role
+
+    partial_edit = (request.method == "PATCH")
+
+    if role == Profile.Role.INDIVIDUAL:
+        if not hasattr(profile, "individualprofile"):
+            return Response({"error": "Individual profile not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        instance = profile.individualprofile
+        serializer = IndividualProfileEditSerializer(instance, data=request.data, partial=partial_edit)
+
+    else:
+        if not hasattr(profile, "enterpriseprofile"):
+            return Response({"error": "Enterprise profile not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        instance = profile.enterpriseprofile
+        serializer = EnterpriseProfileEditSerializer(instance, data=request.data, partial=is_partial)
+ 
+    if serializer.is_valid():
+        serializer.save()
+        return Response({"detail": "Profile updated successfully."}, status=status.HTTP_200_OK)
+ 
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def profileDetails(request, uidb64):
+    user = decode_uid(uidb64)
+    if user is None or not hasattr(user, 'profile'):
+        return Response(
+            {'error': 'Profile not found.'},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    profile = user.profile
+    is_owner = (request.user == user)
+
+    if profile.role == Profile.Role.INDIVIDUAL:
+        if not hasattr(profile, 'individualprofile'):
+            return Response(
+                {'error': 'Profile not found.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = IndividualProfileDetailsSerializer(profile.individualprofile)
+    else:
+        if not hasattr(profile, 'enterpriseprofile'):
+            return Response(
+                {'error': 'Profile not found.'},
+                status=status.HTTP_404_NOT_FOUND,)
+
+        serializer = EnterpriseProfileDetailsSerializer(profile.enterpriseprofile)
+
+    return Response(
+        {**serializer.data, "is_owner": is_owner},
+        status=status.HTTP_200_OK,
+    )

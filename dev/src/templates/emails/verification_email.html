@@ -1,0 +1,4 @@
+Hi {{ user.email }},
+Click the link below to verify your Elevio account:
+{{ protocol }}://{{ domain }}{% url 'accounts:verify_email' uid token %}
+    Verify my account
