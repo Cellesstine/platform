@@ -3,7 +3,6 @@ from pathlib import Path
 from datetime import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 SECRET_KEY = 'django-insecure-858#(18v+-9w%zg!ks*0o5t%w03t)=fm7ye9)ql4h#o!m9_h4c'
 
@@ -131,7 +130,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'defaultdb',
         'USER': 'avnadmin',
-        'PASSWORD': os.getenv('AIVEN_PASSWORD'),
+        'PASSWORD': 'AVNS_mXhZuoDUFVuWU2WFHyQ',
         'HOST': 'db-django-cellesstinee.e.aivencloud.com',
         'PORT': '12384',
         'OPTIONS': {
