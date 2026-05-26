@@ -1,0 +1,1 @@
+export { OnboardingAccount as default } from "./OnboardingPages";

@@ -1,0 +1,1 @@
+export { OnboardingDocuments as default } from "./OnboardingPages";

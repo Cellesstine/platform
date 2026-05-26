@@ -1,0 +1,727 @@
+/* Linkio landing — matches provided static design */
+.linkio-landing {
+  --navy: #1b3a5c;
+  --navy-deep: #0f2540;
+  --crimson: #7f1d1d;
+  --ivory: #f5f1ed;
+  --ivory-warm: #ede8e2;
+  --ivory-deep: #e0d9d0;
+  --gold: #c49a3c;
+  --gold-light: #d4ad55;
+  --text-dark: #111820;
+  --text-mid: #3a4755;
+  --text-muted: #7a8694;
+  --white: #ffffff;
+  --card-border: rgba(27, 58, 92, 0.12);
+
+  font-family: "DM Sans", sans-serif;
+  background: var(--ivory);
+  color: var(--text-dark);
+  line-height: 1.6;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+.linkio-landing *,
+.linkio-landing *::before,
+.linkio-landing *::after {
+  box-sizing: border-box;
+}
+
+.linkio-landing nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 3rem;
+  height: 72px;
+  background: rgba(245, 241, 237, 0.88);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(27, 58, 92, 0.08);
+}
+
+.linkio-landing .nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.linkio-landing .nav-wordmark {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--navy);
+  letter-spacing: -0.02em;
+}
+
+.linkio-landing .nav-links {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.linkio-landing .nav-links a {
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--text-mid);
+  letter-spacing: 0.01em;
+  transition: color 0.2s;
+}
+
+.linkio-landing .nav-links a:hover {
+  color: var(--navy);
+}
+
+.linkio-landing .nav-cta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.linkio-landing .btn-ghost {
+  padding: 0.5rem 1.25rem;
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  background: transparent;
+  font-family: "DM Sans", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--navy);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.linkio-landing .btn-ghost:hover {
+  background: var(--navy);
+  color: var(--white);
+  border-color: var(--navy);
+}
+
+.linkio-landing .btn-primary {
+  padding: 0.5rem 1.25rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--navy);
+  font-family: "DM Sans", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--white);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.linkio-landing .btn-primary:hover {
+  background: var(--navy-deep);
+}
+
+.linkio-landing .hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 9rem 6rem 6rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.linkio-landing .hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 79px,
+      rgba(27, 58, 92, 0.035) 79px,
+      rgba(27, 58, 92, 0.035) 80px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 79px,
+      rgba(27, 58, 92, 0.035) 79px,
+      rgba(27, 58, 92, 0.035) 80px
+    );
+  pointer-events: none;
+}
+
+.linkio-landing .hero::after {
+  content: "Linkio";
+  position: absolute;
+  bottom: -3rem;
+  right: -1.5rem;
+  font-family: "Playfair Display", serif;
+  font-size: clamp(8rem, 18vw, 20rem);
+  font-weight: 700;
+  color: rgba(27, 58, 92, 0.035);
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  letter-spacing: -0.04em;
+}
+
+.linkio-landing .hero-inner {
+  position: relative;
+  z-index: 2;
+  max-width: 800px;
+}
+
+.linkio-landing .hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 2rem;
+  justify-content: center;
+}
+
+.linkio-landing .eyebrow-line {
+  width: 28px;
+  height: 1.5px;
+  background: var(--gold);
+}
+
+.linkio-landing .eyebrow-text {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.linkio-landing .hero-h1 {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: clamp(3.2rem, 6vw, 5.5rem);
+  font-weight: 600;
+  line-height: 1.04;
+  color: var(--navy-deep);
+  margin: 0 0 1.5rem;
+  letter-spacing: -0.025em;
+}
+
+.linkio-landing .hero-h1 em {
+  font-style: italic;
+  color: var(--crimson);
+}
+
+.linkio-landing .hero-sub {
+  font-size: 1.1rem;
+  color: var(--text-mid);
+  max-width: 520px;
+  margin: 0 auto 2.5rem;
+  line-height: 1.75;
+  font-weight: 300;
+}
+
+.linkio-landing .hero-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 3rem;
+}
+
+.linkio-landing .btn-hero-primary {
+  padding: 0.9rem 2.2rem;
+  background: var(--navy);
+  color: var(--white);
+  border: none;
+  border-radius: 6px;
+  font-family: "DM Sans", sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.linkio-landing .btn-hero-primary:hover {
+  background: var(--navy-deep);
+  transform: translateY(-1px);
+}
+
+.linkio-landing .btn-hero-outline {
+  padding: 0.9rem 2.2rem;
+  background: transparent;
+  color: var(--navy);
+  border: 1.5px solid var(--navy);
+  border-radius: 6px;
+  font-family: "DM Sans", sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.linkio-landing .btn-hero-outline:hover {
+  background: var(--navy);
+  color: var(--white);
+  transform: translateY(-1px);
+}
+
+.linkio-landing .hero-trust {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.linkio-landing .trust-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.linkio-landing .trust-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--gold);
+  flex-shrink: 0;
+}
+
+.linkio-landing .section {
+  padding: 6rem;
+}
+
+.linkio-landing .section-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.linkio-landing .section-eyebrow::before {
+  content: "";
+  display: inline-block;
+  width: 20px;
+  height: 1.5px;
+  background: var(--gold);
+}
+
+.linkio-landing .section-eyebrow span {
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.linkio-landing .section-title {
+  font-family: "Playfair Display", serif;
+  font-size: clamp(2rem, 3.5vw, 2.8rem);
+  font-weight: 600;
+  color: var(--navy-deep);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  max-width: 420px;
+  margin: 0 0 3rem;
+}
+
+.linkio-landing .section-title em {
+  font-style: italic;
+  color: var(--crimson);
+}
+
+.linkio-landing .paths-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.linkio-landing .path-card {
+  background: var(--white);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 2.5rem;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  text-decoration: none;
+  display: block;
+  color: inherit;
+}
+
+.linkio-landing .path-card::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--navy);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+.linkio-landing .path-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 60px rgba(27, 58, 92, 0.09);
+}
+
+.linkio-landing .path-card:hover::after {
+  transform: scaleX(1);
+}
+
+.linkio-landing .path-card.crimson::after {
+  background: var(--crimson);
+}
+
+.linkio-landing .path-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.linkio-landing .path-icon.navy {
+  background: rgba(27, 58, 92, 0.08);
+}
+
+.linkio-landing .path-icon.crimson {
+  background: rgba(127, 29, 29, 0.08);
+}
+
+.linkio-landing .path-type {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.linkio-landing .path-type.navy {
+  color: var(--navy);
+}
+
+.linkio-landing .path-type.crimson {
+  color: var(--crimson);
+}
+
+.linkio-landing .path-heading {
+  font-family: "Playfair Display", serif;
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--navy-deep);
+  margin: 0 0 0.75rem;
+  line-height: 1.2;
+}
+
+.linkio-landing .path-heading em {
+  font-style: italic;
+}
+
+.linkio-landing .path-desc {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+  margin-bottom: 1.5rem;
+  font-weight: 300;
+}
+
+.linkio-landing .path-features {
+  list-style: none;
+  margin: 0 0 2rem;
+  padding: 0;
+}
+
+.linkio-landing .path-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--text-mid);
+  padding: 0.35rem 0;
+  border-bottom: 1px solid rgba(27, 58, 92, 0.04);
+}
+
+.linkio-landing .path-features li:last-child {
+  border-bottom: none;
+}
+
+.linkio-landing .feature-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  margin-top: 0.45rem;
+  flex-shrink: 0;
+}
+
+.linkio-landing .feature-dot.navy {
+  background: var(--navy);
+}
+
+.linkio-landing .feature-dot.crimson {
+  background: var(--crimson);
+}
+
+.linkio-landing .path-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-family: "DM Sans", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.linkio-landing .path-cta.navy {
+  background: var(--navy);
+  color: var(--white);
+  border: 1.5px solid var(--navy);
+}
+
+.linkio-landing .path-cta.navy:hover {
+  background: var(--navy-deep);
+}
+
+.linkio-landing .path-cta.crimson {
+  background: transparent;
+  color: var(--crimson);
+  border: 1.5px solid var(--crimson);
+}
+
+.linkio-landing .path-cta.crimson:hover {
+  background: var(--crimson);
+  color: var(--white);
+}
+
+.linkio-landing .path-cta:hover .cta-arrow {
+  transform: translateX(3px);
+}
+
+.linkio-landing .cta-arrow {
+  transition: transform 0.2s;
+}
+
+.linkio-landing .steps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  counter-reset: steps;
+}
+
+.linkio-landing .step {
+  counter-increment: steps;
+  position: relative;
+  padding: 2rem 0;
+}
+
+.linkio-landing .step::before {
+  content: counter(steps, decimal-leading-zero);
+  font-family: "Playfair Display", serif;
+  font-size: 4rem;
+  font-weight: 600;
+  color: rgba(27, 58, 92, 0.06);
+  line-height: 1;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.linkio-landing .step-title {
+  font-family: "Playfair Display", serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--navy-deep);
+  margin: 0 0 0.6rem;
+}
+
+.linkio-landing .step-desc {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+  font-weight: 300;
+  margin: 0;
+}
+
+.linkio-landing .step-connector {
+  position: absolute;
+  top: 4.5rem;
+  right: -1rem;
+  width: 2rem;
+  height: 1px;
+  background: linear-gradient(90deg, var(--ivory-deep), transparent);
+}
+
+.linkio-landing .step:last-child .step-connector {
+  display: none;
+}
+
+.linkio-landing .section-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--ivory-deep) 20%,
+    var(--ivory-deep) 80%,
+    transparent
+  );
+  margin: 0 4rem;
+}
+
+.linkio-landing .signin-strip {
+  background: var(--ivory-warm);
+  border-top: 1px solid var(--ivory-deep);
+  padding: 1.5rem 6rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.linkio-landing .signin-strip a {
+  color: var(--navy);
+  text-decoration: none;
+  font-weight: 500;
+  border-bottom: 1px solid rgba(27, 58, 92, 0.25);
+  padding-bottom: 1px;
+  transition: all 0.2s;
+}
+
+.linkio-landing .signin-strip a:hover {
+  color: var(--crimson);
+  border-color: rgba(127, 29, 29, 0.25);
+}
+
+.linkio-landing footer {
+  background: var(--white);
+  border-top: 1px solid var(--ivory-deep);
+  padding: 2.5rem 6rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.linkio-landing .footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.linkio-landing .footer-wordmark {
+  font-family: "Playfair Display", serif;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--navy);
+  letter-spacing: -0.01em;
+}
+
+.linkio-landing .footer-copy {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.linkio-landing .footer-links {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.linkio-landing .footer-links a {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.linkio-landing .footer-links a:hover {
+  color: var(--navy);
+}
+
+.linkio-landing .reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.linkio-landing .reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.linkio-landing .reveal-delay-1 {
+  transition-delay: 0.1s;
+}
+
+.linkio-landing .reveal-delay-2 {
+  transition-delay: 0.22s;
+}
+
+.linkio-landing .reveal-delay-3 {
+  transition-delay: 0.34s;
+}
+
+.linkio-landing .reveal-delay-4 {
+  transition-delay: 0.48s;
+}
+
+@media (max-width: 900px) {
+  .linkio-landing nav {
+    padding: 0 1.25rem;
+  }
+
+  .linkio-landing .nav-links {
+    display: none;
+  }
+
+  .linkio-landing .hero,
+  .linkio-landing .section {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
+  .linkio-landing .paths-grid,
+  .linkio-landing .steps-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .linkio-landing .section-divider {
+    margin: 0 1.5rem;
+  }
+
+  .linkio-landing .signin-strip,
+  .linkio-landing footer {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
+  .linkio-landing .step-connector {
+    display: none;
+  }
+}

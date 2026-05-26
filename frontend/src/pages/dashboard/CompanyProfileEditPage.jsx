@@ -1,0 +1,1 @@
+export { CompanyProfileEditPage as default } from "./DashboardPages";

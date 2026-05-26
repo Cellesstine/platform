@@ -1,0 +1,1 @@
+export { OnboardingCompany as default } from "./OnboardingPages";
