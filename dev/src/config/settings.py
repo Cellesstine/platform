@@ -7,7 +7,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-858#(18v+-9w%zg!ks*0o5t%w03t)=fm7ye9)ql4h#o!m9_h4c'
 
 DEBUG = True
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    ""
+]
 
 DJANGO_APPS = [
     'django.contrib.admin',
@@ -82,7 +84,8 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000'
 ]
 
 ROOT_URLCONF = 'config.urls'
