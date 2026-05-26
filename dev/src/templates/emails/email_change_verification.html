@@ -2,4 +2,4 @@ Hello {{ user.first_name }},
 
 Please confirm this is your new address by clicking the link below:
 
-{{ protocol }}://{{ domain }}{% url 'accounts:verify_email_change' uidb64=uid token=token %}
+{{ protocol }}://{{ domain }}{% url 'accounts:verifyEmailChange' uidb64=uid token=token %}

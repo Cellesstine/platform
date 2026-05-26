@@ -1,16 +1,16 @@
 from django.db import transaction
 from rest_framework import serializers
 
-from .models import JobPost, Application
+from .models import Announcement, Application
 
 
 # ─────────────────────────────────────────────
-# JobPost
+# Announcement
 # ─────────────────────────────────────────────
 
-class JobPostSerializer(serializers.ModelSerializer):
+class AnnouncementSerializer(serializers.ModelSerializer):
     class Meta:
-        model = JobPost
+        model = Announcement
         fields = [
             "id", "enterprise", "industry", "role", "wilaya", "address",
             "description", "job_type", "status", "required_skills",
@@ -35,27 +35,10 @@ class JobPostSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError("Deadline cannot be in the past.")
         return value
 
-    def validate(self, data):
-        errors = {}
-
-        if not data.get("industry"):
-            errors["industry"] = "Industry is required."
-
-        if not data.get("role"):
-            errors["role"] = "Role is required."
-
-        if not data.get("job_type"):
-            errors["job_type"] = "Job type is required."
-
-        if errors:
-            raise serializers.ValidationError(errors)
-
-        return data
-
     @transaction.atomic
     def create(self, validated_data):
         required_skills = validated_data.pop("required_skills", [])
-        post = JobPost.objects.create(**validated_data)
+        post = Announcement.objects.create(**validated_data)
         if required_skills:
             post.required_skills.set(required_skills)
         return post
@@ -74,13 +57,13 @@ class JobPostSerializer(serializers.ModelSerializer):
         return instance
 
 
-class JobPostListSerializer(serializers.ModelSerializer):
+class AnnouncementListSerializer(serializers.ModelSerializer):
     """Lightweight serializer for list views (without description)."""
     enterprise_name = serializers.CharField(source="enterprise.company_name", read_only=True)
     required_skills = serializers.StringRelatedField(many=True, read_only=True)
 
     class Meta:
-        model = JobPost
+        model = Announcement
         fields = [
             "id", "enterprise", "enterprise_name", "industry", "role",
             "wilaya", "address", "job_type", "status",
@@ -88,10 +71,10 @@ class JobPostListSerializer(serializers.ModelSerializer):
         ]
 
 
-class JobPostDetailSerializer(JobPostListSerializer):
+class AnnouncementDetailSerializer(AnnouncementListSerializer):
     """Full serializer with description."""
-    class Meta(JobPostListSerializer.Meta):
-        fields = JobPostListSerializer.Meta.fields + ["description"]
+    class Meta(AnnouncementListSerializer.Meta):
+        fields = AnnouncementListSerializer.Meta.fields + ["description"]
 
 
 # ─────────────────────────────────────────────

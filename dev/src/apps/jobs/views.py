@@ -4,34 +4,34 @@ from django.db.models import Q
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError
 
 from apps.profiles.models import EnterpriseProfile
 
-from .models import JobPost, Application
+from .models import Announcement, Application
 from .serializers import (
-    serialize_job_post_list,
-    serialize_job_post_detail,
-    deserialize_job_post,
-    serialize_application,
-    deserialize_application,
+    AnnouncementSerializer,
+    AnnouncementListSerializer,
+    AnnouncementDetailSerializer,
+    ApplicationSerializer,
+    ApplicationDetailsSerializer,
+    ApplicationStatusSerializer,
 )
 
 
 # ─────────────────────────────────────────────
-# JobPost — List / Create
+# Announcement — List / Create
 # ─────────────────────────────────────────────
 
 @api_view(["GET", "POST"])
-def job_post_list_create(request):
+def announcement_list_create(request):
     """
-    GET  /api/jobs/   — list job posts
-    POST /api/jobs/   — create a job post
+    GET  /api/jobs/   — list announcements
+    POST /api/jobs/   — create an announcement
     """
     if request.method == "GET":
-        qs = JobPost.objects.select_related("enterprise").prefetch_related("required_skills")
+        qs = Announcement.objects.select_related("enterprise").prefetch_related("required_skills")
 
-        st         = request.query_params.get("status", "active")
+        st         = request.query_params.get("status", "ACTIVE").upper()
         industry   = request.query_params.get("industry")
         role       = request.query_params.get("role")
         wilaya     = request.query_params.get("wilaya")
@@ -39,16 +39,16 @@ def job_post_list_create(request):
         enterprise = request.query_params.get("enterprise")
         search     = request.query_params.get("search")
 
-        if st != "all":
+        if st != "ALL":
             qs = qs.filter(status=st)
         if industry:
-            qs = qs.filter(industry=industry)
+            qs = qs.filter(industry=industry.upper())
         if role:
-            qs = qs.filter(role=role)
+            qs = qs.filter(role=role.upper())
         if wilaya:
             qs = qs.filter(wilaya=wilaya)
         if job_type:
-            qs = qs.filter(job_type=job_type)
+            qs = qs.filter(job_type=job_type.upper())
         if enterprise:
             qs = qs.filter(enterprise_id=enterprise)
         if search:
@@ -58,34 +58,74 @@ def job_post_list_create(request):
                 Q(enterprise__company_name__icontains=search)
             )
 
-        return Response([serialize_job_post_list(p) for p in qs])
+        serializer = AnnouncementListSerializer(qs, many=True)
+        return Response(serializer.data)
 
     # POST
-    try:
-        cleaned = deserialize_job_post(request.data)
-
-        # required_skills is ManyToMany — must be set after create()
-        required_skills = request.data.get("required_skills", [])
-
-        enterprise_id = request.data.get("enterprise")
-        enterprise = get_object_or_404(EnterpriseProfile, pk=enterprise_id)
-
-        post = JobPost.objects.create(enterprise=enterprise, **cleaned)
-
-        if required_skills:
-            post.required_skills.set(required_skills)
-
-        return Response(serialize_job_post_detail(post), status=status.HTTP_201_CREATED)
-    except ValidationError as e:
-        return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
+    serializer = AnnouncementSerializer(data=request.data)
+    if serializer.is_valid():
+        post = serializer.save()
+        detail_serializer = AnnouncementDetailSerializer(post)
+        return Response(detail_serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # ─────────────────────────────────────────────
-# JobPost — Retrieve / Update / Delete
+# Announcement — Search
+# ─────────────────────────────────────────────
+
+@api_view(["GET"])
+def announcement_search(request):
+    """
+    GET /api/jobs/search/
+    """
+    qs = Announcement.objects.select_related("enterprise").prefetch_related("required_skills")
+
+    q         = request.query_params.get("q")
+    industry  = request.query_params.get("industry")
+    role      = request.query_params.get("role")
+    wilaya    = request.query_params.get("wilaya")
+    job_type  = request.query_params.get("job_type")
+    st        = request.query_params.get("status", "ACTIVE").upper()
+    exp_max   = request.query_params.get("exp_max")
+
+    if st != "ALL":
+        qs = qs.filter(status=st)
+    if industry:
+        qs = qs.filter(industry=industry.upper())
+    if role:
+        qs = qs.filter(role=role.upper())
+    if wilaya:
+        qs = qs.filter(wilaya=wilaya)
+    if job_type:
+        qs = qs.filter(job_type=job_type.upper())
+    if exp_max:
+        qs = qs.filter(
+            Q(experience_required__lte=exp_max) | Q(experience_required__isnull=True)
+        )
+    if q:
+        qs = qs.filter(
+            Q(description__icontains=q)       |
+            Q(address__icontains=q)            |
+            Q(role__icontains=q)               |
+            Q(industry__icontains=q)           |
+            Q(enterprise__company_name__icontains=q) |
+            Q(required_skills__name__icontains=q)
+        ).distinct()
+
+    serializer = AnnouncementListSerializer(qs, many=True)
+    return Response({
+        "count": qs.count(),
+        "results": serializer.data,
+    })
+
+
+# ─────────────────────────────────────────────
+# Announcement — Retrieve / Update / Delete
 # ─────────────────────────────────────────────
 
 @api_view(["GET", "PUT", "PATCH", "DELETE"])
-def job_post_detail(request, pk):
+def announcement_detail(request, pk):
     """
     GET    /api/jobs/<id>/
     PUT    /api/jobs/<id>/
@@ -93,62 +133,58 @@ def job_post_detail(request, pk):
     DELETE /api/jobs/<id>/
     """
     post = get_object_or_404(
-        JobPost.objects.select_related("enterprise").prefetch_related("required_skills"),
+        Announcement.objects.select_related("enterprise").prefetch_related("required_skills"),
         pk=pk,
     )
 
     if request.method == "GET":
-        return Response(serialize_job_post_detail(post))
+        serializer = AnnouncementDetailSerializer(post)
+        return Response(serializer.data)
 
     if request.method == "DELETE":
         post.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     # PUT / PATCH
-    try:
-        cleaned = deserialize_job_post(request.data, instance=post)
-        required_skills = request.data.get("required_skills")
-
-        for attr, value in cleaned.items():
-            setattr(post, attr, value)
-        post.save()
-
-        if required_skills is not None:
-            post.required_skills.set(required_skills)
-
-        return Response(serialize_job_post_detail(post))
-    except ValidationError as e:
-        return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
+    partial = (request.method == "PATCH")
+    serializer = AnnouncementSerializer(post, data=request.data, partial=partial)
+    if serializer.is_valid():
+        updated_post = serializer.save()
+        detail_serializer = AnnouncementDetailSerializer(updated_post)
+        return Response(detail_serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # ─────────────────────────────────────────────
-# JobPost — Publish / Close
+# Announcement — Publish / Close
 # ─────────────────────────────────────────────
 
 @api_view(["POST"])
-def job_post_publish(request, pk):
+def announcement_publish(request, pk):
     """POST /api/jobs/<id>/publish/"""
-    post = get_object_or_404(JobPost, pk=pk)
+    post = get_object_or_404(Announcement, pk=pk)
     if post.is_active():
         return Response(
-            {"detail": "Job post is already active."},
+            {"detail": "Announcement is already active."},
             status=status.HTTP_400_BAD_REQUEST,
         )
     post.publish()
-    return Response(serialize_job_post_detail(post))
+    serializer = AnnouncementDetailSerializer(post)
+    return Response(serializer.data)
 
 
 @api_view(["POST"])
-def job_post_close(request, pk):
+def announcement_close(request, pk):
     """POST /api/jobs/<id>/close/"""
-    post = get_object_or_404(JobPost, pk=pk)
+    post = get_object_or_404(Announcement, pk=pk)
     if post.is_closed():
         return Response(
-            {"detail": "Job post is already closed."},
+            {"detail": "Announcement is already closed."},
             status=status.HTTP_400_BAD_REQUEST,
         )
     post.close()
-    return Response(serialize_job_post_detail(post))
+    serializer = AnnouncementDetailSerializer(post)
+    return Response(serializer.data)
 
 
 # ─────────────────────────────────────────────
@@ -158,7 +194,7 @@ def job_post_close(request, pk):
 @api_view(["GET", "POST"])
 def application_list_create(request):
     """
-    GET  /api/jobs/applications/?job_post=<id>   — list applications for a job post
+    GET  /api/jobs/applications/?job_post=<id>   — list applications for an announcement
     GET  /api/jobs/applications/?applicant=<id>  — list applications by an applicant
     POST /api/jobs/applications/                 — submit an application
     """
@@ -174,17 +210,56 @@ def application_list_create(request):
         if applicant_id:
             qs = qs.filter(applicant_id=applicant_id)
         if st:
-            qs = qs.filter(status=st)
+            qs = qs.filter(status=st.upper())
 
-        return Response([serialize_application(a) for a in qs.order_by("-created_at")])
+        serializer = ApplicationDetailsSerializer(qs.order_by("-created_at"), many=True)
+        return Response(serializer.data)
 
     # POST
-    try:
-        cleaned = deserialize_application(request.data)
-        app = Application.objects.create(**cleaned)
-        return Response(serialize_application(app), status=status.HTTP_201_CREATED)
-    except ValidationError as e:
-        return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
+    serializer = ApplicationSerializer(data=request.data)
+    if serializer.is_valid():
+        app = serializer.save()
+        detail_serializer = ApplicationDetailsSerializer(app)
+        return Response(detail_serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ─────────────────────────────────────────────
+# Applications — Search
+# ─────────────────────────────────────────────
+
+@api_view(["GET"])
+def application_search(request):
+    """
+    GET /api/jobs/applications/search/
+    """
+    qs = Application.objects.select_related("job_post", "applicant", "job_post__enterprise")
+
+    q            = request.query_params.get("q")
+    st           = request.query_params.get("status")
+    job_post_id  = request.query_params.get("job_post")
+    applicant_id = request.query_params.get("applicant")
+
+    if st:
+        qs = qs.filter(status=st.upper())
+    if job_post_id:
+        qs = qs.filter(job_post_id=job_post_id)
+    if applicant_id:
+        qs = qs.filter(applicant_id=applicant_id)
+    if q:
+        qs = qs.filter(
+            Q(cover_letter__icontains=q)                        |
+            Q(job_post__description__icontains=q)               |
+            Q(job_post__enterprise__company_name__icontains=q)  |
+            Q(applicant__first_name__icontains=q)               |
+            Q(applicant__last_name__icontains=q)
+        ).distinct()
+
+    serializer = ApplicationDetailsSerializer(qs.order_by("-created_at"), many=True)
+    return Response({
+        "count": qs.count(),
+        "results": serializer.data,
+    })
 
 
 # ─────────────────────────────────────────────
@@ -202,7 +277,8 @@ def application_detail(request, pk):
     )
 
     if request.method == "GET":
-        return Response(serialize_application(app))
+        serializer = ApplicationDetailsSerializer(app)
+        return Response(serializer.data)
 
     app.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
@@ -216,21 +292,27 @@ def application_detail(request, pk):
 def application_reviewed(request, pk):
     """PATCH /api/jobs/applications/<id>/reviewed/"""
     app = get_object_or_404(Application, pk=pk)
-    app.reviewed()
-    return Response(serialize_application(app))
+    app.status = "REVIEWED"
+    app.save(update_fields=["status"])
+    serializer = ApplicationDetailsSerializer(app)
+    return Response(serializer.data)
 
 
 @api_view(["PATCH"])
 def application_accept(request, pk):
     """PATCH /api/jobs/applications/<id>/accept/"""
     app = get_object_or_404(Application, pk=pk)
-    app.accept()
-    return Response(serialize_application(app))
+    app.status = "ACCEPTED"
+    app.save(update_fields=["status"])
+    serializer = ApplicationDetailsSerializer(app)
+    return Response(serializer.data)
 
 
 @api_view(["PATCH"])
 def application_reject(request, pk):
     """PATCH /api/jobs/applications/<id>/reject/"""
     app = get_object_or_404(Application, pk=pk)
-    app.reject()
-    return Response(serialize_application(app))
+    app.status = "REJECTED"
+    app.save(update_fields=["status"])
+    serializer = ApplicationDetailsSerializer(app)
+    return Response(serializer.data)

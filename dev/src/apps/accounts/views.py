@@ -37,10 +37,7 @@ def registerView(request):
     role_param = request.data.get("role", "").lower()
 
     if role_param not in ROLE_MAP:
-        return Response(
-                {"error": "Invalid role"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        return Response({"error": "Invalid role"}, status=status.HTTP_400_BAD_REQUEST)
 
     role = ROLE_MAP[role_param]
     serializer = RegisterSerializer(data=request.data, context={"role":role, "request":request})
@@ -70,7 +67,7 @@ def loginView(request):
                 )
 
         return Response({
-                "role":user.profile.role,
+                "role":str(user.profile.role).lower(),
                 "access": str(refresh.access_token),
                 "refresh": str(refresh),
                 'needs_profile_setup': needs_profile_setup,
@@ -165,7 +162,7 @@ def reactivateAccountView(request, uidb64, token):
         }, status=status.HTTP_200_OK)
  
     return Response(
-        {'error': 'Reactivation link is invalid or has expired.'},
+        {'error': 'Reactivation link is invhttp://127.0.0.1:8000/account/reactivation/request/alid or has expired.'},
         status=status.HTTP_400_BAD_REQUEST,
     )
 
@@ -182,7 +179,7 @@ def deleteAccountView(request):
     user.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
-@api_view(["DELETE"])
+@api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def deactivateAccountView(request):
     user = request.user
