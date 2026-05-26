@@ -7,7 +7,11 @@ from rest_framework.response import Response
 
 from apps.profiles.models import EnterpriseProfile
 
-from .models import Announcement, Application
+from .models import (
+    Announcement,
+    Application
+    )
+
 from .serializers import (
     AnnouncementSerializer,
     AnnouncementListSerializer,
@@ -17,10 +21,6 @@ from .serializers import (
     ApplicationStatusSerializer,
 )
 
-
-# ─────────────────────────────────────────────
-# Announcement — List / Create
-# ─────────────────────────────────────────────
 
 @api_view(["GET", "POST"])
 def announcement_list_create(request):
