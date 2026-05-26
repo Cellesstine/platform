@@ -10,7 +10,7 @@ urlpatterns = [
 
     path('verify-email/<uidb64>/<token>/', views.verifyEmailView, name='verifyEmail'),
 
-    path('reactivation/request/', views.requestReactivationView, name='requestReactivation'),
+    path('reactivation-request/', views.requestReactivationView, name='requestReactivation'),
     path('reactivate/<uidb64>/<token>/', views.reactivateAccountView, name='reactivate'),
 
     path('account/delete/', views.deleteAccountView, name='accountDelete'),
