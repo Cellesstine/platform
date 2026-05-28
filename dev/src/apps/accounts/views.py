@@ -6,6 +6,10 @@ from rest_framework_simplejwt.exceptions import TokenError
 from django.contrib.auth.tokens import default_token_generator
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
+from django.shortcuts import redirect
+from django.urls import reverse
+from django.conf import settings
+from urllib.parse import quote
 
 from .models import (
     Profile,
@@ -323,3 +327,46 @@ def setPasswordView(request):
         return Response({'detail': 'Password set successfully.'}, status=status.HTTP_200_OK)
  
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def securityStatusView(request):
+    return Response({
+        "has_usable_password": request.user.has_usable_password(),
+        "email": request.user.email,
+    }, status=status.HTTP_200_OK)
+
+
+def googleLoginInitView(request):
+    role = request.GET.get('role', 'individual')
+    request.session['oauth_role'] = role
+    return redirect('/account/google/login/')
+
+
+def oauthCallbackView(request):
+    if not request.user.is_authenticated:
+        return redirect(f"{settings.FRONTEND_URL}/sign-in?error=authentication_failed")
+
+    user = request.user
+    refresh = RefreshToken.for_user(user)
+
+    role = 'individual'
+    needs_profile_setup = True
+
+    if hasattr(user, 'profile'):
+        role = str(user.profile.role).lower()
+        if role == 'individual':
+            needs_profile_setup = not hasattr(user.profile, 'individualprofile')
+        else:
+            needs_profile_setup = not hasattr(user.profile, 'enterpriseprofile')
+
+    redirect_url = (
+        f"{settings.FRONTEND_URL}/oauth-callback"
+        f"?access={str(refresh.access_token)}"
+        f"&refresh={str(refresh)}"
+        f"&role={role}"
+        f"&needs_profile_setup={'true' if needs_profile_setup else 'false'}"
+        f"&email={quote(user.email)}"
+    )
+    return redirect(redirect_url)

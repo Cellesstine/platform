@@ -24,4 +24,9 @@ urlpatterns = [
     path('password/reset/<uidb64>/<token>/', views.passwordResetConfirmView, name='passwordResetConfirm'),
     path('password/change/', views.passwordChangeView, name='passwordChange'),
     path('password/set/', views.setPasswordView, name='setPassword'),
+    path('security-status/', views.securityStatusView, name='security-status'),
+
+    # Google OAuth integration
+    path('google/login/init/', views.googleLoginInitView, name='google-login-init'),
+    path('oauth-callback/', views.oauthCallbackView, name='oauth-callback'),
 ]
