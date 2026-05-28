@@ -9,3 +9,4 @@ logoutView: Done
 deleteAccountView: DONE
 deactivateAccountView: DONE
 requestReactivationView + reactivateAccountView: DONE
+setPasswordView + google oauth: DONE
