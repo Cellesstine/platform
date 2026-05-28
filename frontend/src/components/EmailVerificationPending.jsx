@@ -149,7 +149,7 @@ export default function EmailVerificationPending({ portal }) {
                 Open the email from <strong>noreply@linkio.dz</strong>
               </>,
               <>
-                Click <strong>&quot;Verify my email&quot;</strong> — you&apos;ll be redirected automatically
+                Click <strong>&quot;Verify my email&quot;</strong> in the message we sent you.
               </>,
               <>{step3Text}</>,
             ].map((text, i) => (

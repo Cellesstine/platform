@@ -1,2 +1,7 @@
-<p>Click the link below to reactivate your account:</p>
-<a href="{{protocol}}://{{domain}}{% url 'accounts:reactivate' uidb64=uid token=token %}">Reactivate Account</a>
+Hi {{ user.email }},
+
+Your Linkio account is deactivated. Click the link below to reactivate it:
+
+{{ action_url }}
+
+If you did not request this, you can ignore this email.

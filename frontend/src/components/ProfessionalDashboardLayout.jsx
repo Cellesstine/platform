@@ -1,5 +1,9 @@
+import { useEffect } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import LinkioBrand from "./LinkioBrand";
+import { logout as apiLogout } from "../services/accountApi";
+import { clearAuth, getUserEmail } from "../services/auth";
+import { syncIndividualProfileId } from "../services/applicationsApi";
 
 const menuItems = [
   { to: "/professional/dashboard", label: "Dashboard", icon: "⊞", end: true },
@@ -11,6 +15,18 @@ const accountItems = [{ to: "/professional/dashboard/settings", label: "Settings
 
 export default function ProfessionalDashboardLayout() {
   const navigate = useNavigate();
+  const userEmail = getUserEmail();
+  const initials = userEmail ? userEmail.slice(0, 2).toUpperCase() : "??";
+
+  useEffect(() => {
+    syncIndividualProfileId();
+  }, []);
+
+  const handleLogout = async () => {
+    await apiLogout();
+    clearAuth();
+    navigate("/sign-in", { replace: true });
+  };
 
   const navItem = (item) => (
     <NavLink
@@ -46,17 +62,19 @@ export default function ProfessionalDashboardLayout() {
 
         <div className="mt-auto flex items-center gap-3 bg-ivory-warm rounded-linkio-lg p-3 mb-2">
           <div className="w-9 h-9 bg-navy rounded-full flex items-center justify-center text-white text-xs font-semibold">
-            YB
+            {initials}
           </div>
           <div>
-            <p className="text-sm font-medium text-navy-deep">Yacine Benali</p>
+            <p className="text-sm font-medium text-navy-deep truncate max-w-[140px]">
+              {userEmail || "Professional"}
+            </p>
             <p className="text-xs text-gray-500">Professional</p>
           </div>
         </div>
 
         <button
           type="button"
-          onClick={() => navigate("/")}
+          onClick={handleLogout}
           className="text-left text-sm text-navy px-3 py-2 hover:underline"
         >
           ← Log out

@@ -1,6 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import "./index.css";
 
+import ProtectedRoute from "./components/ProtectedRoute";
+import GuestRoute from "./components/GuestRoute";
+
 // Public
 import LandingPage from "./pages/public/LandingPage";
 import AboutPage from "./pages/public/AboutPage";
@@ -16,6 +19,11 @@ import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import VerifyCodePage from "./pages/auth/VerifyCodePage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import PasswordResetSuccessPage from "./pages/auth/PasswordResetSuccessPage";
+import AccountVerifyEmailRedirect from "./pages/auth/AccountVerifyEmailRedirect";
+import AccountPasswordResetRedirect from "./pages/auth/AccountPasswordResetRedirect";
+import ReactivateAccountPage from "./pages/auth/ReactivateAccountPage";
+import EmailChangeVerifyPage from "./pages/auth/EmailChangeVerifyPage";
+import RequestReactivationPage from "./pages/auth/RequestReactivationPage";
 
 import {
   OnboardingAccount,
@@ -60,9 +68,23 @@ export default function App() {
         <Route path="/how" element={<HowItWorksPage />} />
         <Route path="/companies/:id" element={<CompanyPublicPage />} />
 
-        {/* Auth */}
-        <Route path="/sign-in" element={<SignInPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        {/* Auth — guests only */}
+        <Route
+          path="/sign-in"
+          element={
+            <GuestRoute>
+              <SignInPage />
+            </GuestRoute>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <GuestRoute>
+              <RegisterPage />
+            </GuestRoute>
+          }
+        />
         <Route path="/verify-email" element={<EmailVerificationPage />} />
         <Route
           path="/verify-email/confirm"
@@ -70,10 +92,31 @@ export default function App() {
             <EmailVerifyCallbackPage portal="business" nextPath="/onboarding/company" />
           }
         />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route
+          path="/verify-email/confirm/:uidb64/:token"
+          element={
+            <EmailVerifyCallbackPage portal="business" nextPath="/onboarding/company" />
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <GuestRoute>
+              <ForgotPasswordPage />
+            </GuestRoute>
+          }
+        />
         <Route path="/verify-code" element={<VerifyCodePage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/reset-password/:uidb64/:token" element={<ResetPasswordPage />} />
         <Route path="/password-reset-success" element={<PasswordResetSuccessPage />} />
+        <Route path="/request-reactivation" element={<RequestReactivationPage />} />
+
+        {/* Backend-shaped email link paths (same as API emails) */}
+        <Route path="/account/verify-email/:uidb64/:token" element={<AccountVerifyEmailRedirect />} />
+        <Route path="/account/password/reset/:uidb64/:token" element={<AccountPasswordResetRedirect />} />
+        <Route path="/account/reactivate/:uidb64/:token" element={<ReactivateAccountPage />} />
+        <Route path="/account/email/verify/:uidb64/:token" element={<EmailChangeVerifyPage />} />
 
         {/* Business onboarding */}
         <Route path="/onboarding/account" element={<OnboardingAccount />} />
@@ -93,12 +136,28 @@ export default function App() {
             />
           }
         />
+        <Route
+          path="/professional/onboarding/verify-email/confirm/:uidb64/:token"
+          element={
+            <EmailVerifyCallbackPage
+              portal="professional"
+              nextPath="/professional/onboarding/profile"
+            />
+          }
+        />
         <Route path="/professional/onboarding/profile" element={<ProfessionalProfileSetupPage />} />
         <Route path="/professional/onboarding/documents" element={<ProfessionalDocumentsPage />} />
         <Route path="/professional/onboarding/pending" element={<ProfessionalPendingPage />} />
 
         {/* Business dashboard */}
-        <Route path="/dashboard" element={<DashboardLayout />}>
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute role="enterprise">
+              <DashboardLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<DashboardHome />} />
           <Route path="announcements" element={<AnnouncementsPage />} />
           <Route path="announcements/new" element={<NewAnnouncementPage />} />
@@ -108,7 +167,14 @@ export default function App() {
         </Route>
 
         {/* Professional dashboard */}
-        <Route path="/professional/dashboard" element={<ProfessionalDashboardLayout />}>
+        <Route
+          path="/professional/dashboard"
+          element={
+            <ProtectedRoute role="individual">
+              <ProfessionalDashboardLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<ProfessionalDashboardHome />} />
           <Route path="announcements" element={<ProfessionalAnnouncementsPage />} />
           <Route path="announcements/:id" element={<ProfessionalJobDetailPage />} />

@@ -1,4 +1,6 @@
-import api, { isMockApiEnabled } from "./api";
+import { isMockApiEnabled } from "./api";
+import { verifyEmail as apiVerifyEmail, resendVerificationEmail as apiResendVerification } from "./accountApi";
+import { buildAccountEmailLink, signupVerifyConfirmPath, getFrontendOrigin } from "../utils/accountEmailLinks";
 
 export const EMAIL_VERIFY_TTL_SECONDS = 15 * 60;
 
@@ -45,7 +47,6 @@ function isValidMockToken(portal, token) {
   return Boolean(token && stored && token === stored);
 }
 
-/** Dev mock tokens embed email + timestamp so validation works without sessionStorage (e.g. new tab, Strict Mode). */
 export function parseMockVerifyToken(token, portal) {
   const prefix = `verify.dev.${portal}.`;
   if (!token || !token.startsWith(prefix)) return null;
@@ -69,35 +70,40 @@ function validateMockVerifyToken(token, portal) {
   if (!parsed) return null;
   if (Date.now() - parsed.timestamp > EMAIL_VERIFY_TTL_SECONDS * 1000) {
     const err = new Error("Expired verification link.");
-    err.response = { data: { message: "This verification link is invalid or has expired." } };
+    err.response = { data: { error: "This verification link is invalid or has expired." } };
     throw err;
   }
   return { valid: true, email: parsed.email, mock: true };
 }
 
+/** Mock link uses backend-shaped path on frontend: /account/verify-email/... */
 export function getMockVerifyEmailTo(portal) {
   const token = sessionStorage.getItem(tokenKey(portal));
   if (!token) return null;
-  const base =
-    portal === "professional"
-      ? "/professional/onboarding/verify-email/confirm"
-      : "/verify-email/confirm";
-  return `${base}?token=${encodeURIComponent(token)}`;
+  return accountEmailPathForPortal(portal, "mockuid", token);
+}
+
+function accountEmailPathForPortal(portal, uidb64, token) {
+  return signupVerifyConfirmPath(portal, uidb64, token);
 }
 
 export function getMockVerifyEmailLink(portal) {
   const to = getMockVerifyEmailTo(portal);
   if (!to) return null;
-  return `${window.location.origin}${to}`;
+  return `${getFrontendOrigin()}${to}`;
 }
 
-const CONFIRM_PATHS = {
-  professional: "/professional/onboarding/verify-email/confirm",
-  business: "/verify-email/confirm",
-};
+/** Backend email URL shape on frontend (with ?portal= for redirect handler). */
+export function getMockVerifyEmailBackendShapedLink(portal) {
+  const token = sessionStorage.getItem(tokenKey(portal));
+  if (!token) return null;
+  return `${getFrontendOrigin()}${buildAccountEmailLink("verify-email", "mockuid", token).replace(getFrontendOrigin(), "")}?portal=${portal}`;
+}
 
 export function getEmailConfirmPath(portal) {
-  return CONFIRM_PATHS[portal];
+  return portal === "professional"
+    ? "/professional/onboarding/verify-email/confirm"
+    : "/verify-email/confirm";
 }
 
 async function mockSendVerification(portal, email) {
@@ -110,30 +116,21 @@ function isNetworkError(err) {
   return err.code === "ERR_NETWORK" || err.message === "Network Error" || !err.response;
 }
 
-/** POST /auth/verify-email/send — after account step */
+/** Signup verification is sent by POST /account/register/ only. */
 export async function sendSignupVerificationEmail(portal, email) {
   if (isMockApiEnabled()) {
     return mockSendVerification(portal, email);
   }
-  try {
-    const { data } = await api.post("/auth/verify-email/send", { email, portal });
-    return data;
-  } catch (err) {
-    if (process.env.NODE_ENV === "development" && isNetworkError(err)) {
-      return mockSendVerification(portal, email);
-    }
-    throw err;
-  }
+  return { detail: "Verification email is sent when you register." };
 }
 
-/** POST /auth/verify-email/resend */
+/** POST /account/resend-verification/ — inactive accounts that never signed in. */
 export async function resendSignupVerificationEmail(portal, email) {
   if (isMockApiEnabled()) {
     return mockSendVerification(portal, email);
   }
   try {
-    const { data } = await api.post("/auth/verify-email/resend", { email, portal });
-    return data;
+    return await apiResendVerification(email);
   } catch (err) {
     if (process.env.NODE_ENV === "development" && isNetworkError(err)) {
       return mockSendVerification(portal, email);
@@ -142,8 +139,8 @@ export async function resendSignupVerificationEmail(portal, email) {
   }
 }
 
-/** GET /auth/verify-email/validate?token= — email link lands on confirm route */
-export async function validateSignupVerificationToken(token, portal) {
+/** GET /account/verify-email/:uidb64/:token/ */
+export async function validateSignupVerificationToken(uidb64, token, portal) {
   const tryMockValidation = () => {
     const fromToken = validateMockVerifyToken(token, portal);
     if (fromToken) return fromToken;
@@ -152,7 +149,7 @@ export async function validateSignupVerificationToken(token, portal) {
       return { valid: true, email, mock: true };
     }
     const err = new Error("Invalid or expired verification link.");
-    err.response = { data: { message: "This verification link is invalid or has expired." } };
+    err.response = { data: { error: "This verification link is invalid or has expired." } };
     throw err;
   };
 
@@ -162,10 +159,7 @@ export async function validateSignupVerificationToken(token, portal) {
   }
 
   try {
-    const { data } = await api.get("/auth/verify-email/validate", {
-      params: { token, portal },
-    });
-    return data;
+    return await apiVerifyEmail(uidb64, token);
   } catch (err) {
     if (process.env.NODE_ENV === "development" && isNetworkError(err)) {
       await delay(200);
@@ -176,10 +170,11 @@ export async function validateSignupVerificationToken(token, portal) {
 }
 
 export function getEmailVerificationErrorMessage(err) {
+  if (err.response?.data?.detail) return err.response.data.detail;
   if (err.response?.data?.message) return err.response.data.message;
   if (err.response?.data?.error) return err.response.data.error;
   if (isNetworkError(err)) {
-    return "Cannot reach the server. Run npm start for automatic mock mode in development.";
+    return "Cannot reach the server. Ensure the API is running at REACT_APP_API_URL.";
   }
   return "Something went wrong. Please try again.";
 }

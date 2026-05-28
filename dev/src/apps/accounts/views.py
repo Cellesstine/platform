@@ -27,7 +27,7 @@ from .utils import (
     send_email_change_verification,
     send_password_reset_email,
     ROLE_MAP,
-    )
+)
 
 User = get_user_model()
 
@@ -130,16 +130,34 @@ def verifyEmailView(request, uidb64, token):
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
-def requestReactivationView(request):
+def resendVerificationView(request):
     email = request.data.get('email', '').lower()
- 
+
     try:
         user = User.objects.get(email=email)
-        if not user.is_active:
+        if not user.is_active and user.last_login is None:
+            send_verification_email(request, user)
+    except User.DoesNotExist:
+        pass
+
+    return Response(
+        {'detail': 'if email exist, verification link has been sent'},
+        status=status.HTTP_200_OK,
+    )
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def requestReactivationView(request):
+    email = request.data.get('email', '').lower()
+
+    try:
+        user = User.objects.get(email=email)
+        if not user.is_active and user.last_login is not None:
             send_reactivation_email(request, user)
     except User.DoesNotExist:
         pass
- 
+
     return Response(
         {'detail': 'if email exist, reactivation link has been sent'},
         status=status.HTTP_200_OK,
@@ -162,7 +180,7 @@ def reactivateAccountView(request, uidb64, token):
         }, status=status.HTTP_200_OK)
  
     return Response(
-        {'error': 'Reactivation link is invhttp://127.0.0.1:8000/account/reactivation/request/alid or has expired.'},
+        {'error': 'Reactivation link is invalid or has expired.'},
         status=status.HTTP_400_BAD_REQUEST,
     )
 

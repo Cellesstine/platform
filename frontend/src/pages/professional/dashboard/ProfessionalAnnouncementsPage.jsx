@@ -1,24 +1,49 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { professionalJobs } from "../../../data/professionalJobs";
 import { Tag } from "../../../components/ui";
+import api from "../../../services/api";
+import { INDUSTRY_OPTIONS, JOB_TYPE_OPTIONS } from "../../../constants/apiChoices";
+import { parseApiError } from "../../../services/auth";
 
 export default function ProfessionalAnnouncementsPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("All categories");
-  const [type, setType] = useState("All types");
+  const [category, setCategory] = useState("ALL");
+  const [type, setType] = useState("ALL");
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const filtered = professionalJobs.filter((j) => {
-    const q = search.toLowerCase();
-    const matchSearch =
-      !q ||
-      j.title.toLowerCase().includes(q) ||
-      j.company.toLowerCase().includes(q) ||
-      j.location.toLowerCase().includes(q);
-    const matchType = type === "All types" || j.type === type;
-    return matchSearch && matchType;
-  });
+  useEffect(() => {
+    let cancelled = false;
+    const loadAnnouncements = async () => {
+      try {
+        const { data } = await api.get("/jobs/", {
+          params: {
+            status: "ACTIVE",
+            search: search || undefined,
+            industry: category !== "ALL" ? category : undefined,
+          },
+        });
+        if (cancelled) return;
+        setJobs(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (cancelled) return;
+        setError(parseApiError(err, "Unable to load announcements."));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    loadAnnouncements();
+    return () => {
+      cancelled = true;
+    };
+  }, [search, category]);
+
+  const filtered = useMemo(() => {
+    if (type === "ALL") return jobs;
+    return jobs.filter((j) => j.job_type === type);
+  }, [jobs, type]);
 
   return (
     <div>
@@ -40,50 +65,59 @@ export default function ProfessionalAnnouncementsPage() {
           onChange={(e) => setCategory(e.target.value)}
           className="px-4 py-3 rounded-xl bg-white border border-gray-100 text-sm outline-none shadow-sm min-w-[160px]"
         >
-          <option>All categories</option>
-          <option>Technology</option>
-          <option>Design</option>
-          <option>Engineering</option>
+          <option value="ALL">All categories</option>
+          {INDUSTRY_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
         </select>
         <select
           value={type}
           onChange={(e) => setType(e.target.value)}
           className="px-4 py-3 rounded-xl bg-white border border-gray-100 text-sm outline-none shadow-sm min-w-[140px]"
         >
-          <option>All types</option>
-          <option>Full-time</option>
-          <option>Contract</option>
+          <option value="ALL">All types</option>
+          {JOB_TYPE_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
         </select>
       </div>
 
+      {loading ? (
+        <p className="text-sm text-gray-500">Loading announcements...</p>
+      ) : error ? (
+        <p className="text-sm text-red-600">{error}</p>
+      ) : (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {filtered.map((job) => (
           <article key={job.id} className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3 mb-4">
               <div
                 className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-xs font-bold"
-                style={{ background: job.color }}
+                style={{ background: "#1b2d52" }}
               >
-                {job.initials}
+                {(job.enterprise_name || "CO").slice(0, 2).toUpperCase()}
               </div>
-              <span className="text-sm text-gray-500">{job.company}</span>
+              <span className="text-sm text-gray-500">{job.enterprise_name}</span>
             </div>
 
-            <h2 className="font-semibold text-lg text-gray-900 mb-2">{job.title}</h2>
+            <h2 className="font-semibold text-lg text-gray-900 mb-2">{job.role}</h2>
             <p className="text-sm text-gray-500 mb-4">
-              {job.location} · {job.type} · {job.salary}
+              {job.wilaya} · {job.job_type} · {job.industry}
             </p>
 
             <div className="flex flex-wrap gap-2 mb-5">
-              {job.tags.map((t) => (
-                <Tag key={t} variant={t === "Remote" ? "remote" : t === "New" ? "new" : "presential"}>
-                  {t}
-                </Tag>
-              ))}
+              <Tag variant="new">{job.status}</Tag>
+              <Tag variant="remote">{job.job_type}</Tag>
             </div>
 
             <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-              <span className="text-xs text-gray-400">{job.posted}</span>
+              <span className="text-xs text-gray-400">
+                {job.created_at ? new Date(job.created_at).toLocaleDateString() : "Recently"}
+              </span>
               <button
                 type="button"
                 onClick={() => navigate(`/professional/dashboard/announcements/${job.id}`)}
@@ -95,6 +129,7 @@ export default function ProfessionalAnnouncementsPage() {
           </article>
         ))}
       </div>
+      )}
     </div>
   );
 }

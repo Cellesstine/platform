@@ -110,9 +110,9 @@ export default function VerifyCodePage() {
               Open the email from <strong>noreply@workbridge.dz</strong>
             </>,
             <>
-              Click the <strong>&quot;Reset my password&quot;</strong> button inside
+              Click <strong>&quot;Reset my password&quot;</strong> in the email we sent you
             </>,
-            <>You&apos;ll be redirected automatically to create a new password</>,
+            <>You&apos;ll be taken to step 3 to set a new password</>,
           ].map((text, i) => (
             <li key={i} className="flex items-start gap-4 text-sm text-gray-600">
               <span className="w-7 h-7 rounded-full bg-pro-blue/50 text-navy text-xs font-semibold flex items-center justify-center flex-shrink-0">

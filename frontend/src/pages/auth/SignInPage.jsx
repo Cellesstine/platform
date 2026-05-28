@@ -1,9 +1,12 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation, useSearchParams } from "react-router-dom";
 import AuthLayout from "../../components/AuthLayout";
 import { canSubmitSignInForm } from "../../utils/accountValidation";
 import { inputClass, FormDivider, OAuthButtons, PrimaryButton, PageTitle } from "../../components/ui";
 import { getPortal } from "../../theme/portal";
+import { login as apiLogin } from "../../services/accountApi";
+import { storeAuthFromResponse, parseApiError, getDashboardPath } from "../../services/auth";
+import { syncIndividualProfileId } from "../../services/applicationsApi";
 
 const leftContent = (
   <div>
@@ -36,15 +39,73 @@ const leftContent = (
 
 export default function SignInPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [inactiveEmail, setInactiveEmail] = useState(null);
   const theme = getPortal("business");
 
+  const successMessage = location.state?.message;
+  const reactivated = location.state?.reactivated;
+
   const canSignIn = canSubmitSignInForm({ email, password });
+
+  const handleSignIn = async () => {
+    if (!canSignIn || loading) return;
+
+    setLoading(true);
+    setError("");
+    setInactiveEmail(null);
+    try {
+      const trimmedEmail = email.trim();
+      const data = await apiLogin({ email: trimmedEmail, password });
+
+      storeAuthFromResponse(data, trimmedEmail);
+
+      if (data?.role === "individual") {
+        if (!data?.needs_profile_setup) {
+          await syncIndividualProfileId();
+        }
+        const next =
+          searchParams.get("next") ||
+          location.state?.from ||
+          (data?.needs_profile_setup ? "/professional/onboarding/profile" : getDashboardPath("individual"));
+        navigate(next, { replace: true });
+        return;
+      }
+
+      const next =
+        searchParams.get("next") ||
+        location.state?.from ||
+        (data?.needs_profile_setup ? "/onboarding/company" : getDashboardPath("enterprise"));
+      navigate(next, { replace: true });
+    } catch (err) {
+      const data = err.response?.data;
+      if (data?.inactive) {
+        setInactiveEmail(data.email || email.trim());
+        setError(
+          "This account is inactive. If you deactivated it, request a reactivation link. If you never verified your email after signing up, check your inbox for the verification email."
+        );
+        return;
+      }
+      setError(parseApiError(err, "Invalid email or password."));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <AuthLayout leftContent={leftContent}>
       <PageTitle title="Good to have you back." subtitle="Enter your credentials to continue." />
+
+      {reactivated || successMessage ? (
+        <p className="text-sm text-green-700 bg-green-50 border border-green-100 rounded-lg px-3 py-2 mb-4">
+          {successMessage || "Account reactivated. Sign in to continue."}
+        </p>
+      ) : null}
 
       <label className="block text-sm font-medium text-navy-deep mb-1">Email Address</label>
       <input
@@ -80,9 +141,25 @@ export default function SignInPage() {
 
       <FormDivider />
       <OAuthButtons />
+      {error ? (
+        <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mt-4 space-y-3">
+          <p>{error}</p>
+          {inactiveEmail ? (
+            <button
+              type="button"
+              className="text-navy font-semibold underline"
+              onClick={() =>
+                navigate("/request-reactivation", { state: { email: inactiveEmail } })
+              }
+            >
+              Request reactivation email →
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
-      <PrimaryButton portal="business" disabled={!canSignIn} onClick={() => canSignIn && navigate("/dashboard")}>
-        Sign in →
+      <PrimaryButton portal="business" disabled={!canSignIn || loading} loading={loading} onClick={handleSignIn}>
+        {loading ? "Signing in…" : "Sign in →"}
       </PrimaryButton>
 
       <p className="text-sm text-gray-500 text-center mt-4">

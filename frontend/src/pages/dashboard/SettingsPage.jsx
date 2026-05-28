@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Toggle, Modal } from "../../components/ui";
 import { goToChangePassword } from "../auth/passwordReset/shared";
+import { deactivateAccount, deleteAccount, logout, changeEmail } from "../../services/accountApi";
+import { clearAuth, getUserEmail, parseApiError } from "../../services/auth";
 
 const settingsNav = [
   { id: "security", label: "Security" },
@@ -20,10 +22,85 @@ export default function SettingsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [deleteChecked, setDeleteChecked] = useState(false);
   const [deactivateReason, setDeactivateReason] = useState("");
+  const [deactivatePassword, setDeactivatePassword] = useState("");
+  const [deletePassword, setDeletePassword] = useState("");
+  const [accountError, setAccountError] = useState("");
+  const [accountLoading, setAccountLoading] = useState(false);
+  const [showChangeEmail, setShowChangeEmail] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [emailChangePassword, setEmailChangePassword] = useState("");
+  const [emailChangeSuccess, setEmailChangeSuccess] = useState("");
+
+  const userEmail = getUserEmail();
+
+  const handleLogout = async () => {
+    await logout();
+    clearAuth();
+    navigate("/sign-in", { replace: true });
+  };
+
+  const handleDeactivate = async () => {
+    if (!deactivatePassword) return;
+    setAccountLoading(true);
+    setAccountError("");
+    try {
+      await deactivateAccount(deactivatePassword);
+      await logout();
+      clearAuth();
+      navigate("/sign-in", {
+        replace: true,
+        state: { message: "Account deactivated. Request reactivation to sign in again." },
+      });
+    } catch (err) {
+      setAccountError(parseApiError(err, "Unable to deactivate account."));
+    } finally {
+      setAccountLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deletePassword || deleteConfirm !== "TECHCORP" || !deleteChecked) return;
+    setAccountLoading(true);
+    setAccountError("");
+    try {
+      await deleteAccount(deletePassword);
+      clearAuth();
+      navigate("/", { replace: true });
+    } catch (err) {
+      setAccountError(parseApiError(err, "Unable to delete account."));
+    } finally {
+      setAccountLoading(false);
+    }
+  };
+
+  const handleChangeEmail = async () => {
+    if (!newEmail.trim()) return;
+    setAccountLoading(true);
+    setAccountError("");
+    try {
+      await changeEmail({ new_email: newEmail.trim(), password: emailChangePassword || undefined });
+      setShowChangeEmail(false);
+      setNewEmail("");
+      setEmailChangePassword("");
+      setAccountError("");
+      setEmailChangeSuccess(
+        "Verification email sent. Open the link at /account/email/verify/… on this app (not the API host)."
+      );
+    } catch (err) {
+      setAccountError(parseApiError(err, "Unable to change email."));
+    } finally {
+      setAccountLoading(false);
+    }
+  };
 
   return (
     <div>
       <h1 className="font-serif text-4xl text-navy font-normal mb-8">Settings</h1>
+      {emailChangeSuccess ? (
+        <p className="text-sm text-green-700 bg-green-50 border border-green-100 rounded-lg px-3 py-2 mb-6">
+          {emailChangeSuccess}
+        </p>
+      ) : null}
 
       <div className="flex flex-col lg:flex-row gap-8">
         <nav className="w-full lg:w-48 flex-shrink-0 space-y-1">
@@ -41,7 +118,7 @@ export default function SettingsPage() {
           ))}
           <button
             type="button"
-            onClick={() => navigate("/sign-in")}
+            onClick={handleLogout}
             className="w-full text-left px-4 py-2.5 rounded-xl text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 mt-4"
           >
             ← Log out
@@ -77,10 +154,11 @@ export default function SettingsPage() {
                 },
                 {
                   label: "Email address",
-                  desc: "contact@techcorp.dz",
+                  desc: userEmail || "—",
                   status: "Verified",
                   statusColor: "text-green-700 bg-green-50",
                   action: "Change",
+                  onAction: () => setShowChangeEmail(true),
                 },
                 { label: "Connected accounts", desc: "Google, Apple", status: null, action: "Manage" },
                 {
@@ -271,7 +349,7 @@ export default function SettingsPage() {
           <select
             value={deactivateReason}
             onChange={(e) => setDeactivateReason(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-gray-50 text-sm mb-6 outline-none"
+            className="w-full px-4 py-3 rounded-xl bg-gray-50 text-sm mb-4 outline-none"
           >
             <option value="">Select a reason...</option>
             <option>Pausing hiring</option>
@@ -279,6 +357,17 @@ export default function SettingsPage() {
             <option>Privacy concerns</option>
             <option>Other</option>
           </select>
+          <label className="text-xs text-gray-500 block mb-2">Confirm with your password</label>
+          <input
+            type="password"
+            value={deactivatePassword}
+            onChange={(e) => setDeactivatePassword(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl bg-gray-50 text-sm mb-4 outline-none"
+            placeholder="Your password"
+          />
+          {accountError ? (
+            <p className="text-sm text-red-600 mb-4">{accountError}</p>
+          ) : null}
           <div className="flex gap-3">
             <button
               type="button"
@@ -289,10 +378,11 @@ export default function SettingsPage() {
             </button>
             <button
               type="button"
-              onClick={() => setShowDeactivate(false)}
-              className="flex-1 py-3 bg-amber text-white rounded-xl text-sm font-medium hover:bg-amber/90"
+              disabled={!deactivatePassword || accountLoading}
+              onClick={handleDeactivate}
+              className="flex-1 py-3 bg-amber text-white rounded-xl text-sm font-medium hover:bg-amber/90 disabled:opacity-50"
             >
-              Yes, Deactivate
+              {accountLoading ? "Deactivating…" : "Yes, Deactivate"}
             </button>
           </div>
         </div>
@@ -318,6 +408,14 @@ export default function SettingsPage() {
             <p>• Billing and subscription history</p>
             <p>• Connected account data</p>
           </div>
+          <label className="text-xs text-gray-500 block mb-2">Your password</label>
+          <input
+            type="password"
+            value={deletePassword}
+            onChange={(e) => setDeletePassword(e.target.value)}
+            placeholder="Enter your password"
+            className="w-full px-4 py-3 rounded-xl bg-gray-50 text-sm mb-4 outline-none focus:border-red-300"
+          />
           <label className="text-xs text-gray-500 block mb-2">To confirm, type TECHCORP below</label>
           <input
             value={deleteConfirm}
@@ -344,19 +442,58 @@ export default function SettingsPage() {
             </button>
             <button
               type="button"
-              disabled={deleteConfirm !== "TECHCORP" || !deleteChecked}
-              onClick={() => {
-                setShowDelete(false);
-                navigate("/");
-              }}
+              disabled={deleteConfirm !== "TECHCORP" || !deleteChecked || !deletePassword || accountLoading}
+              onClick={handleDelete}
               className="flex-1 py-3 bg-red-400 text-white rounded-xl text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-red-500"
             >
-              Delete Account Permanently
+              {accountLoading ? "Deleting…" : "Delete Account Permanently"}
             </button>
           </div>
           <p className="text-xs text-gray-400 text-center mt-4">
             You will receive a confirmation email at contact@techcorp.dz
           </p>
+        </div>
+      </Modal>
+
+      <Modal open={showChangeEmail} onClose={() => setShowChangeEmail(false)} className="max-w-md">
+        <div className="p-6">
+          <h3 className="font-semibold text-lg mb-2">Change email address</h3>
+          <p className="text-sm text-gray-500 mb-4">
+            We&apos;ll send a verification link to your new email. Open it at{" "}
+            <code className="text-xs bg-gray-100 px-1 rounded">/account/email/verify/…</code> on this app.
+          </p>
+          <label className="text-xs text-gray-500 block mb-1">New email</label>
+          <input
+            type="email"
+            value={newEmail}
+            onChange={(e) => setNewEmail(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl bg-gray-50 text-sm mb-4 outline-none"
+          />
+          <label className="text-xs text-gray-500 block mb-1">Current password</label>
+          <input
+            type="password"
+            value={emailChangePassword}
+            onChange={(e) => setEmailChangePassword(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl bg-gray-50 text-sm mb-4 outline-none"
+          />
+          {accountError ? <p className="text-sm text-red-600 mb-4">{accountError}</p> : null}
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => setShowChangeEmail(false)}
+              className="flex-1 py-3 border border-gray-200 rounded-xl text-sm"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={!newEmail.trim() || accountLoading}
+              onClick={handleChangeEmail}
+              className="flex-1 py-3 bg-navy text-white rounded-xl text-sm disabled:opacity-50"
+            >
+              {accountLoading ? "Sending…" : "Send verification"}
+            </button>
+          </div>
         </div>
       </Modal>
     </div>

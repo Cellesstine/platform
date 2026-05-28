@@ -1,32 +1,37 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   validateSignupVerificationToken,
   markEmailVerified,
   getEmailVerificationSession,
 } from "../../services/emailVerificationApi";
+import { storeAuthFromResponse } from "../../services/auth";
 
 export default function EmailVerifyCallbackPage({ portal, nextPath }) {
   const navigate = useNavigate();
+  const { uidb64, token: tokenParam } = useParams();
   const [searchParams] = useSearchParams();
-  const token = searchParams.get("token");
+  const token = tokenParam || searchParams.get("token");
 
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!token) {
+    if (!uidb64 || !token) {
       setStatus("error");
-      setError("Missing verification token.");
+      setError("Missing verification link parameters.");
       return;
     }
 
     let cancelled = false;
     (async () => {
       try {
-        const data = await validateSignupVerificationToken(token, portal);
+        const data = await validateSignupVerificationToken(uidb64, token, portal);
         const email = data?.email || getEmailVerificationSession(portal)?.email || "";
         markEmailVerified(portal, email);
+        if (data?.access) {
+          storeAuthFromResponse(data, email);
+        }
         if (!cancelled) {
           navigate(nextPath, { replace: true, state: { email } });
         }
@@ -34,7 +39,8 @@ export default function EmailVerifyCallbackPage({ portal, nextPath }) {
         if (!cancelled) {
           setStatus("error");
           setError(
-            err.response?.data?.message ||
+            err.response?.data?.detail ||
+              err.response?.data?.message ||
               err.response?.data?.error ||
               "This verification link is invalid or has expired."
           );
@@ -45,7 +51,7 @@ export default function EmailVerifyCallbackPage({ portal, nextPath }) {
     return () => {
       cancelled = true;
     };
-  }, [token, portal, nextPath, navigate]);
+  }, [uidb64, token, portal, nextPath, navigate]);
 
   if (status === "loading") {
     return (

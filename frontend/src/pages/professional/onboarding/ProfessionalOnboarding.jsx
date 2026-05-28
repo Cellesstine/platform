@@ -16,12 +16,12 @@ import { getPortal } from "../../../theme/portal";
 import { canSubmitAccountForm } from "../../../utils/accountValidation";
 import EmailVerificationPending from "../../../components/EmailVerificationPending";
 import {
-  sendSignupVerificationEmail,
   saveEmailVerificationSession,
-  getEmailVerificationErrorMessage,
   isEmailVerified,
   getEmailVerificationSession,
 } from "../../../services/emailVerificationApi";
+import { register as apiRegister } from "../../../services/accountApi";
+import { parseApiError } from "../../../services/auth";
 
 const profBenefits = [
   "Build a verified skill profile",
@@ -52,13 +52,18 @@ export function ProfessionalAccountPage() {
     setLoading(true);
     setError("");
     try {
-      await sendSignupVerificationEmail("professional", trimmed);
+      await apiRegister({
+        email: trimmed,
+        password,
+        password_confirm: confirmPassword,
+        role: "individual",
+      });
       const expiresAt = saveEmailVerificationSession("professional", trimmed);
       navigate("/professional/onboarding/verify-email", {
         state: { email: trimmed, expiresAt },
       });
     } catch (err) {
-      setError(getEmailVerificationErrorMessage(err));
+      setError(parseApiError(err, "Unable to create your account. Please try again."));
     } finally {
       setLoading(false);
     }

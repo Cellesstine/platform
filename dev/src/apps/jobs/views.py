@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Q
 
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -55,7 +56,14 @@ def announcement_list_create(request):
         serializer = AnnouncementListSerializer(qs, many=True)
         return Response(serializer.data)
 
-    serializer = AnnouncementSerializer(data=request.data)
+    if not request.user.is_authenticated:
+        return Response({"error": "Authentication required."}, status=status.HTTP_401_UNAUTHORIZED)
+    if not hasattr(request.user, "profile") or not hasattr(request.user.profile, "enterpriseprofile"):
+        return Response({"error": "Enterprise profile required."}, status=status.HTTP_403_FORBIDDEN)
+
+    payload = request.data.copy()
+    payload["enterprise"] = str(request.user.profile.enterpriseprofile.id)
+    serializer = AnnouncementSerializer(data=payload)
     if serializer.is_valid():
         announcement = serializer.save()
         return Response(

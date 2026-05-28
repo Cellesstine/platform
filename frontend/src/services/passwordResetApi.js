@@ -1,6 +1,11 @@
-import api, { isMockApiEnabled } from "./api";
+import { isMockApiEnabled } from "./api";
+import {
+  requestPasswordReset as apiRequestPasswordReset,
+  confirmPasswordReset as apiConfirmPasswordReset,
+} from "./accountApi";
+import { buildAccountEmailLink } from "../utils/accountEmailLinks";
 
-/** Link validity window (must match backend email TTL). */
+/** Link validity window shown in UI (backend token TTL may differ). */
 export const PASSWORD_RESET_TTL_SECONDS = 15 * 60;
 
 const STORAGE_EMAIL = "passwordResetEmail";
@@ -31,11 +36,11 @@ export function clearPasswordResetSession() {
   sessionStorage.removeItem(MOCK_TOKEN_KEY);
 }
 
-/** Dev-only: link shown on step 2 when mock API is on (no real email sent). */
+/** Dev-only: link matching backend email path on the frontend host. */
 export function getMockResetLink() {
   const token = sessionStorage.getItem(MOCK_TOKEN_KEY);
   if (!token) return null;
-  return `${window.location.origin}/reset-password?token=${encodeURIComponent(token)}`;
+  return buildAccountEmailLink("password-reset", "mockuid", token);
 }
 
 function createMockToken(email) {
@@ -49,7 +54,6 @@ function isValidMockToken(token) {
   return Boolean(token && stored && token === stored);
 }
 
-/** Dev mock tokens embed email + timestamp (works without sessionStorage). */
 function parseMockPasswordResetToken(token) {
   if (!token?.startsWith("dev.")) return null;
   const rest = token.slice(4);
@@ -72,7 +76,7 @@ function validateMockPasswordResetToken(token) {
   if (!parsed) return null;
   if (Date.now() - parsed.timestamp > PASSWORD_RESET_TTL_SECONDS * 1000) {
     const err = new Error("Expired reset link.");
-    err.response = { data: { message: "This reset link is invalid or has expired." } };
+    err.response = { data: { error: "This reset link is invalid or has expired." } };
     throw err;
   }
   return { valid: true, mock: true };
@@ -88,15 +92,14 @@ function isNetworkError(err) {
   return err.code === "ERR_NETWORK" || err.message === "Network Error" || !err.response;
 }
 
-/** POST /auth/forgot-password — sends reset email */
+/** POST /account/password/reset/ */
 export async function requestPasswordReset(email) {
   if (isMockApiEnabled()) {
     return mockRequestPasswordReset(email);
   }
 
   try {
-    const { data } = await api.post("/auth/forgot-password", { email });
-    return data;
+    return await apiRequestPasswordReset(email);
   } catch (err) {
     if (process.env.NODE_ENV === "development" && isNetworkError(err)) {
       return mockRequestPasswordReset(email);
@@ -105,57 +108,13 @@ export async function requestPasswordReset(email) {
   }
 }
 
-/** POST /auth/forgot-password/resend — resend after cooldown */
+/** POST /account/password/reset/ — resend */
 export async function resendPasswordReset(email) {
-  if (isMockApiEnabled()) {
-    return mockRequestPasswordReset(email);
-  }
-
-  try {
-    const { data } = await api.post("/auth/forgot-password/resend", { email });
-    return data;
-  } catch (err) {
-    if (process.env.NODE_ENV === "development" && isNetworkError(err)) {
-      return mockRequestPasswordReset(email);
-    }
-    throw err;
-  }
+  return requestPasswordReset(email);
 }
 
-/** GET /auth/reset-password/validate?token= — called when user opens email link */
-export async function validatePasswordResetToken(token) {
-  const tryMockValidation = () => {
-    const fromToken = validateMockPasswordResetToken(token);
-    if (fromToken) return fromToken;
-    if (isValidMockToken(token)) {
-      return { valid: true, mock: true };
-    }
-    const err = new Error("Invalid or expired reset link.");
-    err.response = { data: { message: "This reset link is invalid or has expired." } };
-    throw err;
-  };
-
-  if (isMockApiEnabled()) {
-    await delay(200);
-    return tryMockValidation();
-  }
-
-  try {
-    const { data } = await api.get("/auth/reset-password/validate", {
-      params: { token },
-    });
-    return data;
-  } catch (err) {
-    if (process.env.NODE_ENV === "development" && isNetworkError(err)) {
-      await delay(200);
-      return tryMockValidation();
-    }
-    throw err;
-  }
-}
-
-/** POST /auth/reset-password — set new password using token from email */
-export async function completePasswordReset(token, password) {
+/** POST /account/password/reset/:uidb64/:token/ */
+export async function completePasswordReset(uidb64, token, password) {
   const isMockTokenValid = () =>
     Boolean(validateMockPasswordResetToken(token) || isValidMockToken(token));
 
@@ -163,25 +122,25 @@ export async function completePasswordReset(token, password) {
     await delay(300);
     if (!isMockTokenValid()) {
       const err = new Error("Invalid token");
-      err.response = { data: { message: "This reset link is invalid or has expired." } };
+      err.response = { data: { error: "This reset link is invalid or has expired." } };
       throw err;
     }
     clearPasswordResetSession();
     return { mock: true };
   }
 
-  const { data } = await api.post("/auth/reset-password", { token, password });
-  return data;
+  return apiConfirmPasswordReset(uidb64, token, {
+    new_password: password,
+    new_password_confirm: password,
+  });
 }
 
-/** Map axios/network failures to a clear message for the UI */
 export function getPasswordResetErrorMessage(err) {
+  if (err.response?.data?.detail) return err.response.data.detail;
   if (err.response?.data?.message) return err.response.data.message;
   if (err.response?.data?.error) return err.response.data.error;
   if (isNetworkError(err)) {
-    return (
-      "Cannot reach the server. Start your API on port 5000, or run the app with npm start (development uses mock mode automatically)."
-    );
+    return "Cannot reach the server. Ensure the API is running (default http://127.0.0.1:8000) or enable REACT_APP_MOCK_API=true.";
   }
   return "Unable to send reset link. Please try again.";
 }

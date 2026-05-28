@@ -4,11 +4,9 @@ import AuthLayout from "../../components/AuthLayout";
 import { canSubmitAccountForm } from "../../utils/accountValidation";
 import { inputClass, FormDivider, OAuthButtons, AlertError, PrimaryButton, PageTitle } from "../../components/ui";
 import { getPortal } from "../../theme/portal";
-import {
-  sendSignupVerificationEmail,
-  saveEmailVerificationSession,
-  getEmailVerificationErrorMessage,
-} from "../../services/emailVerificationApi";
+import { saveEmailVerificationSession } from "../../services/emailVerificationApi";
+import { register as apiRegister } from "../../services/accountApi";
+import { parseApiError } from "../../services/auth";
 
 const leftContent = (
   <div>
@@ -51,11 +49,16 @@ export default function RegisterPage() {
     setLoading(true);
     setError("");
     try {
-      await sendSignupVerificationEmail("business", trimmed);
+      await apiRegister({
+        email: trimmed,
+        password,
+        password_confirm: confirmPassword,
+        role: "enterprise",
+      });
       const expiresAt = saveEmailVerificationSession("business", trimmed);
       navigate("/verify-email", { state: { email: trimmed, expiresAt } });
     } catch (err) {
-      setError(getEmailVerificationErrorMessage(err));
+      setError(parseApiError(err, "Unable to create your account. Please try again."));
     } finally {
       setLoading(false);
     }

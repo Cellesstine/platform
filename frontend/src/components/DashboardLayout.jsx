@@ -1,5 +1,7 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import LinkioBrand from "./LinkioBrand";
+import { logout as apiLogout } from "../services/accountApi";
+import { clearAuth } from "../services/auth";
 
 const menuItems = [
   { to: "/dashboard", label: "Dashboard", icon: "⊞", end: true },
@@ -12,6 +14,12 @@ const accountItems = [{ to: "/dashboard/settings", label: "Settings", icon: "⚙
 
 export default function DashboardLayout() {
   const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await apiLogout();
+    clearAuth();
+    navigate("/sign-in", { replace: true });
+  };
 
   const navItem = (item) => (
     <NavLink
@@ -57,7 +65,7 @@ export default function DashboardLayout() {
 
         <button
           type="button"
-          onClick={() => navigate("/")}
+          onClick={handleLogout}
           className="text-left text-sm text-red px-3 py-2 hover:underline"
         >
           ← Log out

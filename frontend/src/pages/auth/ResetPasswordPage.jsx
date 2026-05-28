@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   PasswordResetShell,
   PasswordResetTopbar,
@@ -7,10 +7,11 @@ import {
   GradientButton,
 } from "./passwordReset/shared";
 import {
-  validatePasswordResetToken,
   completePasswordReset,
   clearPasswordResetSession,
 } from "../../services/passwordResetApi";
+import { changePassword } from "../../services/accountApi";
+import { parseApiError } from "../../services/auth";
 
 function PasswordField({ label, value, onChange, showMatch }) {
   const [visible, setVisible] = useState(false);
@@ -70,15 +71,16 @@ function StrengthMeter({ password }) {
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { uidb64, token: tokenParam } = useParams();
   const [searchParams] = useSearchParams();
-  const tokenFromEmail = searchParams.get("token");
+  const tokenFromEmail = tokenParam || searchParams.get("token");
 
   const fromSettings = location.state?.fromSettings === true && !tokenFromEmail;
   const returnTo = location.state?.returnTo;
 
   const [tokenValid, setTokenValid] = useState(fromSettings ? true : null);
-  const [validating, setValidating] = useState(Boolean(tokenFromEmail));
   const [tokenError, setTokenError] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -92,30 +94,8 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    let cancelled = false;
-    (async () => {
-      setValidating(true);
-      setTokenError("");
-      try {
-        await validatePasswordResetToken(tokenFromEmail);
-        if (!cancelled) setTokenValid(true);
-      } catch (err) {
-        const message =
-          err.response?.data?.message ||
-          err.response?.data?.error ||
-          "This reset link is invalid or has expired.";
-        if (!cancelled) {
-          setTokenValid(false);
-          setTokenError(message);
-        }
-      } finally {
-        if (!cancelled) setValidating(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
+    setTokenError("");
+    setTokenValid(true);
   }, [tokenFromEmail, fromSettings, navigate]);
 
   const requirements = useMemo(
@@ -129,41 +109,46 @@ export default function ResetPasswordPage() {
   );
 
   const passwordsMatch = password.length > 0 && password === confirm;
-  const canSubmit = passwordsMatch && requirements.slice(0, 3).every((r) => r.met);
+  const canSubmitSettings =
+    fromSettings &&
+    currentPassword.length > 0 &&
+    passwordsMatch &&
+    requirements.slice(0, 3).every((r) => r.met);
+  const canSubmitReset =
+    !fromSettings && passwordsMatch && requirements.slice(0, 3).every((r) => r.met);
+  const canSubmit = fromSettings ? canSubmitSettings : canSubmitReset;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!canSubmit || submitting) return;
 
-    if (fromSettings) {
-      navigate("/password-reset-success", { state: { fromSettings, returnTo } });
-      return;
-    }
-
     setSubmitting(true);
     setSubmitError("");
     try {
-      await completePasswordReset(tokenFromEmail, password);
+      if (fromSettings) {
+        await changePassword({
+          password: currentPassword,
+          new_password: password,
+          new_password_confirm: confirm,
+        });
+        navigate("/password-reset-success", { state: { fromSettings, returnTo } });
+        return;
+      }
+
+      if (!uidb64 || !tokenFromEmail) {
+        throw new Error("Invalid reset link.");
+      }
+      await completePasswordReset(uidb64, tokenFromEmail, password);
       clearPasswordResetSession();
       navigate("/password-reset-success", { replace: true });
     } catch (err) {
-      const message =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        "Could not reset password. Please request a new link.";
-      setSubmitError(message);
+      setSubmitError(
+        parseApiError(err, "Could not update password. Please request a new reset link.")
+      );
     } finally {
       setSubmitting(false);
     }
   };
-
-  if (validating) {
-    return (
-      <PasswordResetShell topbar={<PasswordResetTopbar backTo="/forgot-password" backLabel="← Back" />}>
-        <p className="text-sm text-gray-500">Verifying your reset link…</p>
-      </PasswordResetShell>
-    );
-  }
 
   if (tokenValid === false) {
     return (
@@ -198,19 +183,24 @@ export default function ResetPasswordPage() {
         </svg>
       </div>
 
-      <h1 className="font-serif text-3xl md:text-4xl text-gray-900 font-normal mb-3">Set a new password</h1>
+      <h1 className="font-serif text-3xl md:text-4xl text-gray-900 font-normal mb-3">
+        {fromSettings ? "Change your password" : "Set a new password"}
+      </h1>
       <p className="text-sm text-gray-500 max-w-md leading-relaxed mb-8">
         {fromSettings
-          ? "Create a new strong password for your account."
+          ? "Enter your current password, then choose a new one."
           : "Your identity has been verified. Create a new strong password for your account."}
       </p>
 
-      <PasswordResetStepper current={3} />
+      {!fromSettings ? <PasswordResetStepper current={3} /> : null}
 
       <form
         onSubmit={handleSubmit}
         className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 w-full max-w-md text-left"
       >
+        {fromSettings ? (
+          <PasswordField label="Current Password" value={currentPassword} onChange={setCurrentPassword} />
+        ) : null}
         <PasswordField label="New Password" value={password} onChange={setPassword} />
         <StrengthMeter password={password} />
 

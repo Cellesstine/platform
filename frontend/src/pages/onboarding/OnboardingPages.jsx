@@ -15,12 +15,12 @@ import {
 import { getPortal } from "../../theme/portal";
 import { canSubmitAccountForm } from "../../utils/accountValidation";
 import {
-  sendSignupVerificationEmail,
   saveEmailVerificationSession,
-  getEmailVerificationErrorMessage,
   isEmailVerified,
   getEmailVerificationSession,
 } from "../../services/emailVerificationApi";
+import { register as apiRegister } from "../../services/accountApi";
+import { parseApiError } from "../../services/auth";
 
 const Input = ({ label, placeholder, defaultValue, type = "text" }) => (
   <Field label={label} className="mb-4">
@@ -57,11 +57,16 @@ export function OnboardingAccount() {
     setLoading(true);
     setError("");
     try {
-      await sendSignupVerificationEmail("business", trimmed);
+      await apiRegister({
+        email: trimmed,
+        password,
+        password_confirm: confirmPassword,
+        role: "enterprise",
+      });
       const expiresAt = saveEmailVerificationSession("business", trimmed);
       navigate("/verify-email", { state: { email: trimmed, expiresAt } });
     } catch (err) {
-      setError(getEmailVerificationErrorMessage(err));
+      setError(parseApiError(err, "Unable to create your account. Please try again."));
     } finally {
       setLoading(false);
     }
