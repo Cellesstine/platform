@@ -2,118 +2,190 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
 
-from .models import (
-    Announcement,
-    Application,
-    )
+from .models import Announcement, Application
 
 class AnnouncementSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Announcement
+        model  = Announcement
         fields = [
-            "enterprise", "industry", "role", "wilaya", "address",
-            "description", "job_type", "status", "required_skills",
-            "experience_required", "deadline", "created_at",
+            "id",
+            "enterprise",
+            "industry", "role", "wilaya", "address", "description",
+            "job_type", "status",
+            "required_skills",
+            "experience_required", "deadline",
+            "created_at",
         ]
-
-        read_only_fields = ["enterprise", "status", "created_at"]
+        read_only_fields = ["id", "status", "created_at"]
 
     def validate_address(self, value):
-        if not value.strip():
-            raise serializers.ValidationError("Address is required.")
-        return value.strip().title()
+        stripped = value.strip()
+        if not stripped:
+            raise serializers.ValidationError("Address cannot be blank.")
+        return stripped.title()
 
     def validate_experience_required(self, value):
-        if not(value.isdigit()):
-            raise serializers.ValidationError("positive digits only")
-
+        if value is not None and value < 0:
+            raise serializers.ValidationError("Experience must be a positive number.")
         return value
 
     def validate_deadline(self, value):
-        if value:
-            if value < timezone.now().date():
-                raise serializers.ValidationError("invalid deadline")
+        if value and value < timezone.now().date():
+            raise serializers.ValidationError(
+                "Deadline cannot be in the past."
+            )
         return value
+
+    def validate(self, attrs):
+        return attrs
 
     @transaction.atomic
     def create(self, validated_data):
         required_skills = validated_data.pop("required_skills", [])
-        post = Announcement.objects.create(**validated_data)
+        announcement = Announcement.objects.create(**validated_data)
         if required_skills:
-            post.required_skills.set(required_skills)
-        return post
+            announcement.required_skills.set(required_skills)
+        return announcement
 
     @transaction.atomic
     def update(self, instance, validated_data):
+        # Pop M2M before bulk-setting scalars — you cannot set M2M before
+        # the parent row exists, and setattr doesn't know about M2M at all.
         required_skills = validated_data.pop("required_skills", None)
 
-        for key, value in validated_data.items():
-            setattr(instance, key, value)
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
         instance.save()
 
-        if required_skills is not(None):
+        # `None` means the client didn't send the field (PATCH) — keep existing.
+        # `[]`   means the client explicitly cleared the list — honour that.
+        if required_skills is not None:
             instance.required_skills.set(required_skills)
 
         return instance
 
-
 class AnnouncementListSerializer(serializers.ModelSerializer):
-    enterprise_name = serializers.CharField(source="enterprise.company_name", read_only=True)
-    
+    enterprise_name = serializers.CharField(
+        source="enterprise.company_name", read_only=True
+    )
+    applicant_count = serializers.IntegerField(read_only=True)
+
     class Meta:
-        model = Announcement
+        model  = Announcement
         fields = [
-            "enterprise_name", "industry", "role", "wilaya",
-            "address", "job_type", "status", "created_at",
+            "id",
+            "enterprise_name",
+            "industry", "role", "wilaya", "address",
+            "job_type", "status",
+            "applicant_count",
+            "deadline",
+            "created_at",
         ]
+
 
 class AnnouncementDetailSerializer(AnnouncementListSerializer):
     required_skills = serializers.StringRelatedField(many=True, read_only=True)
 
     class Meta(AnnouncementListSerializer.Meta):
-        fields = [
-            "enterprise_name", "industry", "role", "wilaya", "address",
-            "description", "job_type", "status", "created_at",
-            "experience_required", "deadline", "required_skills",
+        fields = AnnouncementListSerializer.Meta.fields + [
+            "description",
+            "experience_required",
+            "required_skills",
         ]
-
 
 class ApplicationSerializer(serializers.ModelSerializer):
-    applicant = serializers.CharField(source="applicant.email", read_only=True)
-    
     class Meta:
-        model = Application
+        model  = Application
         fields = [
-            "announcement", "applicant", "status",
-            "resume_file", "cover_letter", "created_at",
+            "id",
+            "announcement",
+            "applicant",
+            "cover_letter",
+            "resume_file",
+            "status",
+            "created_at",
         ]
-
-        read_only_fields = ["status", "created_at"]
+        read_only_fields = ["id", "status", "created_at"]
 
     def validate_resume_file(self, value):
         if value:
             content_type = getattr(value, "content_type", None)
-            size = getattr(value, "size", 0)
+            size         = getattr(value, "size", 0)
 
             if content_type and content_type != "application/pdf":
-                raise serializers.ValidationError("Please upload a PDF file.")
-
+                raise serializers.ValidationError("Only PDF files are accepted.")
             if size > 5 * 1024 * 1024:
-                raise serializers.ValidationError("PDF file must be under 5MB.")
-
+                raise serializers.ValidationError("Resume must be under 5 MB.")
         return value
+
+    def validate(self, attrs):
+        announcement = attrs.get("announcement")
+        if announcement and not announcement.is_active():
+            raise serializers.ValidationError(
+                {"announcement": "You can only apply to active announcements."}
+            )
+
+        # Duplicate check (before the DB constraint fires)
+        applicant = attrs.get("applicant")
+        if announcement and applicant:
+            if Application.objects.filter(
+                announcement=announcement, applicant=applicant
+            ).exists():
+                raise serializers.ValidationError(
+                    "You have already applied to this announcement."
+                )
+
+        return attrs
 
     def create(self, validated_data):
         return Application.objects.create(**validated_data)
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+
 class ApplicationDetailsSerializer(serializers.ModelSerializer):
-    announcement_title = serializers.CharField(source="announcement.role", read_only=True)
-    applicant = serializers.CharField(source="applicant.email", read_only=True)
+    announcement_title    = serializers.CharField(source="announcement.role",          read_only=True)
+    announcement_company  = serializers.CharField(source="announcement.enterprise.company_name", read_only=True)
+    applicant_email       = serializers.CharField(source="applicant.user.email",       read_only=True)
+    applicant_name        = serializers.SerializerMethodField()
 
     class Meta:
-        model = Application
+        model  = Application
         fields = [
-            "announcement", "announcement_title", "applicant",
-            "status", "resume_file", "cover_letter", "created_at",
+            "id",
+            "announcement", "announcement_title", "announcement_company",
+            "applicant",    "applicant_email",    "applicant_name",
+            "status",
+            "cover_letter",
+            "resume_file",
+            "created_at",
         ]
+
+    def get_applicant_name(self, obj):
+        return f"{obj.applicant.first_name} {obj.applicant.last_name}".strip()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+
+class ApplicationStatusSerializer(serializers.ModelSerializer):
+    VALID_TRANSITIONS = {
+        "PENDING":  {"REVIEWED"},
+        "REVIEWED": {"ACCEPTED", "REJECTED"},
+        "ACCEPTED": set(),
+        "REJECTED": set(),
+    }
+
+    class Meta:
+        model  = Application
+        fields = ["status"]
+
+    def validate_status(self, value):
+        current = self.instance.status if self.instance else None
+        allowed = self.VALID_TRANSITIONS.get(current, set())
+
+        if value not in allowed:
+            raise serializers.ValidationError(
+                f"Cannot transition from '{current}' to '{value}'. "
+                f"Allowed: {allowed or 'none (terminal state)'}."
+            )
+        return value
