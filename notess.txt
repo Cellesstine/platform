@@ -1,0 +1,11 @@
+#! /usr/bin/accounts
+register + emailVerififcation: DONE
+loginView: DONE
+passwordResetRequestView: DONE
+passwordResetConfirmView: DONE
+passwordChangeView
+verifyEmailChangeView: DONE
+logoutView: Done
+deleteAccountView: DONE
+deactivateAccountView: DONE
+requestReactivationView + reactivateAccountView: DONE
