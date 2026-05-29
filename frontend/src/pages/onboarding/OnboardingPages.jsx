@@ -7,8 +7,6 @@ import {
   Field,
   inputClass,
   PageTitle,
-  FormDivider,
-  OAuthButtons,
   AlertError,
   PrimaryButton,
 } from "../../components/ui";
@@ -127,8 +125,6 @@ export function OnboardingAccount() {
         />
       </Field>
 
-      <FormDivider />
-      <OAuthButtons />
       <AlertError>{error}</AlertError>
 
       <label className="flex items-start gap-3 text-xs text-gray-500 mb-8 cursor-pointer leading-tight">

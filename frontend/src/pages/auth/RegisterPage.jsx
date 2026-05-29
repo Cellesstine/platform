@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import AuthLayout from "../../components/AuthLayout";
 import { canSubmitAccountForm } from "../../utils/accountValidation";
-import { inputClass, FormDivider, OAuthButtons, AlertError, PrimaryButton, PageTitle } from "../../components/ui";
+import { inputClass, AlertError, PrimaryButton, PageTitle } from "../../components/ui";
 import { getPortal } from "../../theme/portal";
 import { saveEmailVerificationSession } from "../../services/emailVerificationApi";
 import { register as apiRegister } from "../../services/accountApi";
@@ -96,8 +96,6 @@ export default function RegisterPage() {
         placeholder="Repeat your password"
       />
 
-      <FormDivider />
-      <OAuthButtons />
       <AlertError>{error}</AlertError>
 
       <label className="flex items-center gap-2 text-sm text-gray-500 mb-5 cursor-pointer">

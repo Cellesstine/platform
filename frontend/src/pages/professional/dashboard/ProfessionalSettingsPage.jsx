@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Toggle, Modal } from "../../../components/ui";
 import { goToChangePassword } from "../../auth/passwordReset/shared";
-import { deactivateAccount, deleteAccount, logout, changeEmail } from "../../../services/accountApi";
+import { deactivateAccount, deleteAccount, logout, changeEmail, getSecurityStatus } from "../../../services/accountApi";
 import { clearAuth, getUserEmail, parseApiError } from "../../../services/auth";
 
 const settingsNav = [
@@ -32,6 +32,19 @@ export default function ProfessionalSettingsPage() {
   const [emailChangeSuccess, setEmailChangeSuccess] = useState("");
 
   const userEmail = getUserEmail();
+  const [hasUsablePassword, setHasUsablePassword] = useState(true);
+
+  useEffect(() => {
+    async function fetchSecurityStatus() {
+      try {
+        const status = await getSecurityStatus();
+        setHasUsablePassword(status.has_usable_password);
+      } catch (err) {
+        console.error("Failed to fetch security status:", err);
+      }
+    }
+    fetchSecurityStatus();
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -138,11 +151,23 @@ export default function ProfessionalSettingsPage() {
               {[
                 {
                   label: "Password",
-                  desc: "Last changed 3 months ago",
-                  status: "Strong",
-                  statusColor: "text-green-700 bg-green-50",
-                  action: "Change",
-                  onAction: () => goToChangePassword(navigate, "professional"),
+                  desc: hasUsablePassword ? "Last changed 3 months ago" : "No password configured yet (using Google)",
+                  status: hasUsablePassword ? "Strong" : "Not set",
+                  statusColor: hasUsablePassword ? "text-green-700 bg-green-50" : "text-amber-700 bg-amber-50",
+                  action: hasUsablePassword ? "Change" : "Set Password",
+                  onAction: () => {
+                    if (hasUsablePassword) {
+                      goToChangePassword(navigate, "professional");
+                    } else {
+                      navigate("/reset-password", {
+                        state: {
+                          fromSettings: true,
+                          isSetPassword: true,
+                          returnTo: "/professional/dashboard/settings",
+                        },
+                      });
+                    }
+                  },
                 },
                 { label: "Two-factor authentication", desc: "Add an extra layer of security", status: "Not enabled", statusColor: "text-amber-700 bg-amber-50", action: "Enable" },
                 {

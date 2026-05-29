@@ -109,3 +109,8 @@ export async function deactivateAccount(password) {
 export async function deleteAccount(password) {
   await api.delete(ACCOUNT_API.accountDelete, { data: { password } });
 }
+
+export async function getSecurityStatus() {
+  const { data } = await api.get(ACCOUNT_API.securityStatus);
+  return data;
+}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation, useSearchParams } from "react-router-dom";
 import AuthLayout from "../../components/AuthLayout";
 import { canSubmitSignInForm } from "../../utils/accountValidation";
@@ -47,6 +47,21 @@ export default function SignInPage() {
   const [error, setError] = useState("");
   const [inactiveEmail, setInactiveEmail] = useState(null);
   const theme = getPortal("business");
+
+  useEffect(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam) {
+      if (errorParam === "authentication_failed") {
+        setError("Google authentication failed. Please try again.");
+      } else if (errorParam === "auth_storage_failed") {
+        setError("An error occurred while saving your session. Please try again.");
+      } else if (errorParam === "invalid_callback_params") {
+        setError("Received invalid response from Google authentication. Please try again.");
+      } else {
+        setError("Authentication failed. Please try again.");
+      }
+    }
+  }, [searchParams]);
 
   const successMessage = location.state?.message;
   const reactivated = location.state?.reactivated;

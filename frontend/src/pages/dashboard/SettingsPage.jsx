@@ -160,7 +160,6 @@ export default function SettingsPage() {
                   action: "Change",
                   onAction: () => setShowChangeEmail(true),
                 },
-                { label: "Connected accounts", desc: "Google, Apple", status: null, action: "Manage" },
                 {
                   label: "Active sessions",
                   desc: "2 devices currently signed in",

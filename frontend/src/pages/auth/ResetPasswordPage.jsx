@@ -10,7 +10,7 @@ import {
   completePasswordReset,
   clearPasswordResetSession,
 } from "../../services/passwordResetApi";
-import { changePassword } from "../../services/accountApi";
+import { changePassword, setPassword as apiSetPassword } from "../../services/accountApi";
 import { parseApiError } from "../../services/auth";
 
 function PasswordField({ label, value, onChange, showMatch }) {
@@ -77,6 +77,7 @@ export default function ResetPasswordPage() {
 
   const fromSettings = location.state?.fromSettings === true && !tokenFromEmail;
   const returnTo = location.state?.returnTo;
+  const isSetPassword = location.state?.isSetPassword === true;
 
   const [tokenValid, setTokenValid] = useState(fromSettings ? true : null);
   const [tokenError, setTokenError] = useState("");
@@ -111,7 +112,7 @@ export default function ResetPasswordPage() {
   const passwordsMatch = password.length > 0 && password === confirm;
   const canSubmitSettings =
     fromSettings &&
-    currentPassword.length > 0 &&
+    (isSetPassword ? true : currentPassword.length > 0) &&
     passwordsMatch &&
     requirements.slice(0, 3).every((r) => r.met);
   const canSubmitReset =
@@ -126,11 +127,18 @@ export default function ResetPasswordPage() {
     setSubmitError("");
     try {
       if (fromSettings) {
-        await changePassword({
-          password: currentPassword,
-          new_password: password,
-          new_password_confirm: confirm,
-        });
+        if (isSetPassword) {
+          await apiSetPassword({
+            new_password: password,
+            new_password_confirm: confirm,
+          });
+        } else {
+          await changePassword({
+            password: currentPassword,
+            new_password: password,
+            new_password_confirm: confirm,
+          });
+        }
         navigate("/password-reset-success", { state: { fromSettings, returnTo } });
         return;
       }
@@ -184,11 +192,11 @@ export default function ResetPasswordPage() {
       </div>
 
       <h1 className="font-serif text-3xl md:text-4xl text-gray-900 font-normal mb-3">
-        {fromSettings ? "Change your password" : "Set a new password"}
+        {fromSettings ? (isSetPassword ? "Set your password" : "Change your password") : "Set a new password"}
       </h1>
       <p className="text-sm text-gray-500 max-w-md leading-relaxed mb-8">
         {fromSettings
-          ? "Enter your current password, then choose a new one."
+          ? (isSetPassword ? "Create a new password for your account." : "Enter your current password, then choose a new one.")
           : "Your identity has been verified. Create a new strong password for your account."}
       </p>
 
@@ -198,7 +206,7 @@ export default function ResetPasswordPage() {
         onSubmit={handleSubmit}
         className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 w-full max-w-md text-left"
       >
-        {fromSettings ? (
+        {fromSettings && !isSetPassword ? (
           <PasswordField label="Current Password" value={currentPassword} onChange={setCurrentPassword} />
         ) : null}
         <PasswordField label="New Password" value={password} onChange={setPassword} />
@@ -235,7 +243,7 @@ export default function ResetPasswordPage() {
         )}
 
         <GradientButton type="submit" disabled={!canSubmit || submitting}>
-          {submitting ? "Resetting…" : "Reset Password →"}
+          {submitting ? "Processing…" : (fromSettings && isSetPassword ? "Set Password →" : "Reset Password →")}
         </GradientButton>
       </form>
     </PasswordResetShell>

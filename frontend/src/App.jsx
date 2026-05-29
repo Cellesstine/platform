@@ -13,6 +13,7 @@ import CompanyPublicPage from "./pages/public/CompanyPublicPage";
 // Auth
 import SignInPage from "./pages/auth/SignInPage";
 import RegisterPage from "./pages/auth/RegisterPage";
+import OAuthCallbackPage from "./pages/auth/OAuthCallbackPage";
 import EmailVerificationPage from "./pages/auth/EmailVerificationPage";
 import EmailVerifyCallbackPage from "./pages/auth/EmailVerifyCallbackPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
@@ -85,6 +86,7 @@ export default function App() {
             </GuestRoute>
           }
         />
+        <Route path="/oauth-callback" element={<OAuthCallbackPage />} />
         <Route path="/verify-email" element={<EmailVerificationPage />} />
         <Route
           path="/verify-email/confirm"

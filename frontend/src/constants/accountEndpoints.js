@@ -17,4 +17,5 @@ export const ACCOUNT_API = {
   passwordSet: "/account/password/set/",
   accountDelete: "/account/account/delete/",
   accountDeactivate: "/account/account/deactivate/",
+  securityStatus: "/account/security-status/",
 };
