@@ -5,6 +5,26 @@ import { Field, inputClass } from "../../../components/ui";
 export default function ProfessionalProfileEditPage() {
   const navigate = useNavigate();
   const [skills, setSkills] = useState(["JavaScript", "React", "Node.js", "TypeScript", "Git"]);
+  const [newSkill, setNewSkill] = useState("");
+
+  const handleAddSkill = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const val = newSkill.trim();
+      if (val && !skills.includes(val)) {
+        setSkills([...skills, val]);
+        setNewSkill("");
+      }
+    }
+  };
+
+  const handleAddSkillBtn = () => {
+    const val = newSkill.trim();
+    if (val && !skills.includes(val)) {
+      setSkills([...skills, val]);
+      setNewSkill("");
+    }
+  };
 
   return (
     <div>
@@ -69,19 +89,33 @@ export default function ProfessionalProfileEditPage() {
 
           <section>
             <h3 className="font-semibold mb-4">Skills & Expertise</h3>
-            <div className={`${inputClass} flex flex-wrap gap-2 mb-4`}>
+            <div className={`${inputClass} flex flex-wrap gap-2 items-center min-h-[48px] py-1.5 px-3 mb-4`}>
               {skills.map((s) => (
                 <span key={s} className="inline-flex items-center gap-1 text-xs bg-pro-blue/40 text-navy px-2.5 py-1 rounded-lg">
                   {s}
-                  <button type="button" onClick={() => setSkills((p) => p.filter((x) => x !== s))} className="opacity-60">
+                  <button type="button" onClick={() => setSkills((p) => p.filter((x) => x !== s))} className="text-navy/60 hover:text-navy focus:outline-none font-bold">
                     ×
                   </button>
                 </span>
               ))}
+              <input
+                type="text"
+                value={newSkill}
+                onChange={(e) => setNewSkill(e.target.value)}
+                onKeyDown={handleAddSkill}
+                placeholder={skills.length === 0 ? "Type skill & press Enter" : "Add skill..."}
+                className="flex-1 bg-transparent border-0 outline-none p-0 text-xs focus:ring-0 focus:outline-none min-w-[120px] text-gray-700 placeholder-gray-400"
+              />
+              {newSkill.trim() && (
+                <button
+                  type="button"
+                  onClick={handleAddSkillBtn}
+                  className="text-xs text-navy font-semibold hover:opacity-85"
+                >
+                  + Add
+                </button>
+              )}
             </div>
-            <button type="button" className="w-full py-3 border border-dashed border-gray-300 rounded-xl text-sm text-gray-500 hover:border-navy">
-              + Add skill
-            </button>
           </section>
 
           <section>

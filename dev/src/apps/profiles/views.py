@@ -140,3 +140,79 @@ def profileDetails(request, uidb64):
         {**serializer.data, "is_owner": is_owner},
         status=status.HTTP_200_OK,
     )
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def myProfileDetails(request):
+    user = request.user
+    if not hasattr(user, 'profile'):
+        return Response(
+            {'error': 'Profile not found.'},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    profile = user.profile
+    if profile.role == Profile.Role.INDIVIDUAL:
+        if not hasattr(profile, 'individualprofile'):
+            return Response(
+                {'error': 'Profile not found.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        serializer = IndividualProfileDetailsSerializer(profile.individualprofile)
+    else:
+        if not hasattr(profile, 'enterpriseprofile'):
+            return Response(
+                {'error': 'Profile not found.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        serializer = EnterpriseProfileDetailsSerializer(profile.enterpriseprofile)
+
+    return Response(
+        {**serializer.data, "is_owner": True},
+        status=status.HTTP_200_OK,
+    )
+
+
+from .models import Skill
+from django.utils.text import slugify
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def searchOrCreateSkills(request):
+    if request.method == "GET":
+        q = request.GET.get("q", "")
+        if q:
+            skills = Skill.objects.filter(name__icontains=q)[:20]
+        else:
+            skills = Skill.objects.all()[:50]
+        data = [{"id": s.id, "name": s.name, "category": s.get_category_display()} for s in skills]
+        return Response(data, status=status.HTTP_200_OK)
+
+    elif request.method == "POST":
+        name = request.data.get("name", "").strip()
+        category = request.data.get("category", "OTHER").upper()
+        if not name:
+            return Response({"error": "Skill name is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check valid category
+        valid_categories = [c[0] for c in Skill.Category.choices]
+        if category not in valid_categories:
+            category = "OTHER"
+
+        slug = slugify(name)
+        # Ensure unique slug
+        base_slug = slug
+        counter = 1
+        while Skill.objects.filter(slug=slug).exists():
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+
+        skill, created = Skill.objects.get_or_create(
+            name=name,
+            defaults={"slug": slug, "category": category}
+        )
+        return Response({
+            "id": skill.id,
+            "name": skill.name,
+            "category": skill.get_category_display()
+        }, status=status.HTTP_201_CREATED)

@@ -44,16 +44,6 @@ export default function ProfessionalDashboardHome() {
           <h1 className="font-serif text-4xl text-navy font-normal mb-1">Welcome back, {displayName}</h1>
           <p className="text-sm text-gray-500">Here&apos;s your professional overview</p>
         </div>
-        <span className="text-xs font-medium text-amber-800 bg-amber-light border border-amber/30 px-3 py-1.5 rounded-full">
-          Pending Verification
-        </span>
-      </div>
-
-      <div className="bg-amber-light border border-amber/25 rounded-xl px-4 py-3 flex gap-3 text-sm text-amber-900 mb-8">
-        <span className="text-lg">ℹ</span>
-        <span>
-          Your account is pending verification. You can browse but cannot apply until approved.
-        </span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
