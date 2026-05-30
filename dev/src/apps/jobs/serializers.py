@@ -69,14 +69,22 @@ class AnnouncementListSerializer(serializers.ModelSerializer):
         source="enterprise.company_name", read_only=True
     )
     applicant_count = serializers.IntegerField(read_only=True)
+    role_display = serializers.CharField(source="get_role_display", read_only=True)
+    job_type_display = serializers.CharField(source="get_job_type_display", read_only=True)
+    industry_display = serializers.CharField(source="get_industry_display", read_only=True)
+    wilaya_display = serializers.CharField(source="get_wilaya_display", read_only=True)
 
     class Meta:
         model  = Announcement
         fields = [
             "id",
             "enterprise_name",
-            "industry", "role", "wilaya", "address",
-            "job_type", "status",
+            "industry", "industry_display",
+            "role", "role_display",
+            "wilaya", "wilaya_display",
+            "address",
+            "job_type", "job_type_display",
+            "status",
             "applicant_count",
             "deadline",
             "created_at",

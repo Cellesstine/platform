@@ -1,27 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Toggle, Modal } from "../../components/ui";
+import { Modal } from "../../components/ui";
 import { goToChangePassword } from "../auth/passwordReset/shared";
 import { deactivateAccount, deleteAccount, logout, changeEmail } from "../../services/accountApi";
 import { clearAuth, getUserEmail, parseApiError } from "../../services/auth";
 
-const settingsNav = [
-  { id: "security", label: "Security" },
-  { id: "notifications", label: "Notifications" },
-  { id: "privacy", label: "Privacy" },
-  { id: "preferences", label: "Preferences" },
-];
-
 export default function SettingsPage() {
   const navigate = useNavigate();
   const [section, setSection] = useState("security");
-  const [notifs, setNotifs] = useState([true, true, false, true]);
-  const [privacy, setPrivacy] = useState([true, true, false, false]);
   const [showDeactivate, setShowDeactivate] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState("");
-  const [deleteChecked, setDeleteChecked] = useState(false);
-  const [deactivateReason, setDeactivateReason] = useState("");
   const [deactivatePassword, setDeactivatePassword] = useState("");
   const [deletePassword, setDeletePassword] = useState("");
   const [accountError, setAccountError] = useState("");
@@ -32,12 +20,8 @@ export default function SettingsPage() {
   const [emailChangeSuccess, setEmailChangeSuccess] = useState("");
 
   const userEmail = getUserEmail();
-
-  const handleLogout = async () => {
-    await logout();
-    clearAuth();
-    navigate("/sign-in", { replace: true });
-  };
+  const displayName = userEmail?.split("@")[0] || "User";
+  const initials = userEmail ? userEmail.slice(0, 2).toUpperCase() : "BU";
 
   const handleDeactivate = async () => {
     if (!deactivatePassword) return;
@@ -59,7 +43,7 @@ export default function SettingsPage() {
   };
 
   const handleDelete = async () => {
-    if (!deletePassword || deleteConfirm !== "TECHCORP" || !deleteChecked) return;
+    if (!deletePassword) return;
     setAccountLoading(true);
     setAccountError("");
     try {
@@ -82,9 +66,8 @@ export default function SettingsPage() {
       setShowChangeEmail(false);
       setNewEmail("");
       setEmailChangePassword("");
-      setAccountError("");
       setEmailChangeSuccess(
-        "Verification email sent. Open the link at /account/email/verify/… on this app (not the API host)."
+        "Verification email sent. Open the link on this app to complete verification."
       );
     } catch (err) {
       setAccountError(parseApiError(err, "Unable to change email."));
@@ -94,284 +77,242 @@ export default function SettingsPage() {
   };
 
   return (
-    <div>
-      <h1 className="font-serif text-4xl text-navy font-normal mb-8">Settings</h1>
-      {emailChangeSuccess ? (
-        <p className="text-sm text-green-700 bg-green-50 border border-green-100 rounded-lg px-3 py-2 mb-6">
-          {emailChangeSuccess}
-        </p>
-      ) : null}
+    <div className="max-w-6xl mx-auto">
+      <div className="mb-8">
+        <h1 className="font-serif text-4xl text-navy font-normal mb-2">Account Settings</h1>
+        <p className="text-sm text-gray-500">Update your security settings and preferences.</p>
+      </div>
+
+      {emailChangeSuccess && (
+        <div className="text-sm text-green-700 bg-green-50 border border-green-150 rounded-2xl p-4 mb-6 shadow-sm flex items-center gap-3">
+          <span className="text-lg">✓</span>
+          <p className="font-medium">{emailChangeSuccess}</p>
+        </div>
+      )}
 
       <div className="flex flex-col lg:flex-row gap-8">
-        <nav className="w-full lg:w-48 flex-shrink-0 space-y-1">
-          {settingsNav.map((item) => (
+        {/* User Card Sidebar */}
+        <div className="w-full lg:w-72 flex-shrink-0 flex flex-col gap-6">
+          <div className="bg-white rounded-3xl p-6 border border-gray-150/50 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center text-center">
+            {/* Initials Avatar with Navy Glow */}
+            <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-[#0b1e36] to-[#1d3d63] text-white flex items-center justify-center text-2xl font-serif font-bold shadow-md relative overflow-hidden mb-4">
+              <div className="absolute inset-0 bg-white/5 opacity-50 blur-[1px]" />
+              <span className="relative z-10">{initials}</span>
+            </div>
+            
+            <h2 className="font-serif text-xl font-medium text-gray-900 capitalize mb-1">{displayName}</h2>
+            <p className="text-xs text-gray-400 font-medium mb-3">{userEmail}</p>
+            <span className="px-3 py-1 bg-slate-100 text-slate-700 text-[10px] font-bold rounded-full uppercase tracking-wider">
+              <i>Business</i>
+            </span>
+          </div>
+
+          <nav className="bg-white rounded-3xl p-3 border border-gray-150/50 shadow-sm flex flex-col gap-1.5">
             <button
-              key={item.id}
               type="button"
-              onClick={() => setSection(item.id)}
-              className={`w-full text-left px-4 py-2.5 rounded-xl text-sm transition-colors ${
-                section === item.id ? "bg-pro-blue text-navy font-medium" : "text-gray-600 hover:bg-white"
+              onClick={() => setSection("security")}
+              className={`w-full text-left px-4 py-3 rounded-2xl text-sm transition-all flex items-center gap-3 font-medium ${
+                section === "security"
+                  ? "bg-[#0B1E36] text-white shadow-md"
+                  : "text-gray-600 hover:bg-slate-50 hover:text-[#0B1E36]"
               }`}
             >
-              {item.label}
+              {/* Lock SVG */}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              Security
             </button>
-          ))}
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="w-full text-left px-4 py-2.5 rounded-xl text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 mt-4"
-          >
-            ← Log out
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowDelete(true)}
-            className="w-full text-left px-4 py-2.5 rounded-xl text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-          >
-            ✕ Delete Account
-          </button>
-        </nav>
+            
+            <button
+              type="button"
+              onClick={() => setSection("preferences")}
+              className={`w-full text-left px-4 py-3 rounded-2xl text-sm transition-all flex items-center gap-3 font-medium ${
+                section === "preferences"
+                  ? "bg-[#0B1E36] text-white shadow-md"
+                  : "text-gray-600 hover:bg-slate-50 hover:text-[#0B1E36]"
+              }`}
+            >
+              {/* Sliders/Cog SVG */}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="4" y1="21" x2="4" y2="14" />
+                <line x1="4" y1="10" x2="4" y2="3" />
+                <line x1="12" y1="21" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12" y2="3" />
+                <line x1="20" y1="21" x2="20" y2="16" />
+                <line x1="20" y1="12" x2="20" y2="3" />
+                <line x1="1" y1="14" x2="7" y2="14" />
+                <line x1="9" y1="8" x2="15" y2="8" />
+                <line x1="17" y1="16" x2="23" y2="16" />
+              </svg>
+              Preferences
+            </button>
+          </nav>
+        </div>
 
-        <div className="flex-1 bg-white rounded-2xl p-8 shadow-sm min-h-[400px]">
+        {/* Content Box */}
+        <div className="flex-1 bg-white rounded-3xl p-8 border border-gray-150/50 shadow-sm min-h-[450px]">
           {section === "security" && (
-            <>
-              <h2 className="font-semibold text-lg mb-6">Security</h2>
-              {[
-                {
-                  label: "Password",
-                  desc: "Last changed 3 months ago",
-                  status: "Strong",
-                  statusColor: "text-green-700 bg-green-50",
-                  action: "Change",
-                  onAction: () => goToChangePassword(navigate, "business"),
-                },
-                {
-                  label: "Two-factor authentication",
-                  desc: "Add an extra layer of security",
-                  status: "Not enabled",
-                  statusColor: "text-amber-700 bg-amber-50",
-                  action: "Enable",
-                },
-                {
-                  label: "Email address",
-                  desc: userEmail || "—",
-                  status: "Verified",
-                  statusColor: "text-green-700 bg-green-50",
-                  action: "Change",
-                  onAction: () => setShowChangeEmail(true),
-                },
-                {
-                  label: "Active sessions",
-                  desc: "2 devices currently signed in",
-                  status: null,
-                  action: "Sign out all",
-                  danger: true,
-                },
-              ].map((row) => (
-                <div
-                  key={row.label}
-                  className="flex items-center justify-between py-4 border-b border-gray-100 last:border-0"
-                >
-                  <div>
-                    <p className="text-sm font-medium">{row.label}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{row.desc}</p>
+            <div className="flex flex-col gap-8">
+              <div>
+                <h3 className="font-serif text-2xl text-gray-900 font-medium mb-1">Security Settings</h3>
+                <p className="text-xs text-gray-400">Protect your account and control authorization credentials.</p>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                {/* Password Item */}
+                <div className="bg-slate-50/50 border border-gray-100 rounded-2xl p-5 hover:bg-slate-50/80 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">Password</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Configure and change your business account credentials
+                      </p>
+                    </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    {row.status && (
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${row.statusColor}`}>
-                        {row.status}
-                      </span>
-                    )}
+                    <span className="text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full font-bold text-green-700 bg-green-50 border border-green-200/50">
+                      Configured
+                    </span>
                     <button
                       type="button"
-                      onClick={row.onAction}
-                      className={`text-sm font-medium ${
-                        row.danger
-                          ? "text-red-600 border border-red-200 px-3 py-1 rounded-lg"
-                          : "text-navy hover:underline"
-                      }`}
+                      onClick={() => goToChangePassword(navigate, "business")}
+                      className="px-4 py-2 border border-gray-200 rounded-full text-xs font-semibold hover:bg-white text-gray-700 transition-all cursor-pointer shadow-sm active:scale-95"
                     >
-                      {row.action}
+                      Change Password
                     </button>
                   </div>
                 </div>
-              ))}
-              <div className="mt-6 bg-gray-50 rounded-xl px-4 py-3 text-xs text-gray-500">
-                Recent login: Today at 10:24 AM · Chrome · Alger, Algeria
+
+                {/* Email Item */}
+                <div className="bg-slate-50/50 border border-gray-100 rounded-2xl p-5 hover:bg-slate-50/80 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                        <polyline points="22,6 12,13 2,6" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">Email Address</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Primary communication address: <span className="font-medium text-gray-700">{userEmail}</span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full font-bold text-green-700 bg-green-50 border border-green-200/50">
+                      Verified
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowChangeEmail(true)}
+                      className="px-4 py-2 border border-gray-200 rounded-full text-xs font-semibold hover:bg-white text-gray-700 transition-all cursor-pointer shadow-sm active:scale-95"
+                    >
+                      Change Email
+                    </button>
+                  </div>
+                </div>
+
+                {/* Account Lifecycle Card */}
+                <div className="bg-red-50/10 border border-red-100/60 rounded-3xl p-6 mt-4">
+                  <h4 className="text-sm font-semibold text-red-950 mb-1">Danger Zone</h4>
+                  <p className="text-xs text-red-700/60 mb-5">Actions below are critical to your profile lifecycle.</p>
+
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between p-4 bg-white border border-red-100/40 rounded-2xl">
+                      <div>
+                        <p className="text-xs font-semibold text-gray-800">Deactivate Account</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">Temporarily hide your profile. Sign in again to reactivate.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAccountError("");
+                          setDeactivatePassword("");
+                          setShowDeactivate(true);
+                        }}
+                        className="px-4 py-2 border border-amber-250 text-amber-800 rounded-full text-xs font-semibold hover:bg-amber-50 transition-all cursor-pointer"
+                      >
+                        Deactivate
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-white border border-red-100/40 rounded-2xl">
+                      <div>
+                        <p className="text-xs font-semibold text-gray-800">Delete Account</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">Permanently delete your profile and application history.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAccountError("");
+                          setDeletePassword("");
+                          setShowDelete(true);
+                        }}
+                        className="px-4 py-2 bg-red-50 text-red-600 border border-red-100 rounded-full text-xs font-semibold hover:bg-red-100/60 transition-all cursor-pointer"
+                      >
+                        Delete Account
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </>
-          )}
-
-          {section === "notifications" && (
-            <>
-              <h2 className="font-semibold text-lg mb-6">Notifications</h2>
-              {[
-                {
-                  label: "New application alerts",
-                  desc: "Get notified when a candidate applies to your listings.",
-                },
-                {
-                  label: "Weekly digest",
-                  desc: "Receive a weekly summary of applications, views, and activity.",
-                },
-                {
-                  label: "Deadline reminders",
-                  desc: "Get a reminder 3 days before any announcement deadline.",
-                },
-                {
-                  label: "Platform news & updates",
-                  desc: "Stay informed about new Linkio features and product updates.",
-                },
-              ].map((item, i) => (
-                <div
-                  key={item.label}
-                  className="flex items-center justify-between py-4 border-b border-gray-100 last:border-0"
-                >
-                  <div>
-                    <p className="text-sm font-medium">{item.label}</p>
-                    <p className="text-xs text-gray-400">{item.desc}</p>
-                  </div>
-                  <Toggle
-                    on={notifs[i]}
-                    onChange={(v) => {
-                      const n = [...notifs];
-                      n[i] = v;
-                      setNotifs(n);
-                    }}
-                  />
-                </div>
-              ))}
-            </>
-          )}
-
-          {section === "privacy" && (
-            <>
-              <h2 className="font-semibold text-lg mb-1">Privacy</h2>
-              <p className="text-sm text-gray-400 mb-6">Company profile visibility</p>
-              {[
-                {
-                  label: "Show company profile publicly",
-                  desc: "Your company page appears in search results for professionals.",
-                },
-                {
-                  label: "Show contact phone number",
-                  desc: "Verified professionals can see your business phone number.",
-                },
-                {
-                  label: "Profile view notifications",
-                  desc: "Know when a professional views your company profile.",
-                },
-                {
-                  label: "Analytics & usage data",
-                  desc: "Help us improve by sharing anonymous usage data.",
-                },
-              ].map((item, i) => (
-                <div
-                  key={item.label}
-                  className="flex items-center justify-between py-4 border-b border-gray-100 last:border-0"
-                >
-                  <div>
-                    <p className="text-sm font-medium">{item.label}</p>
-                    <p className="text-xs text-gray-400">{item.desc}</p>
-                  </div>
-                  <Toggle
-                    on={privacy[i]}
-                    onChange={(v) => {
-                      const p = [...privacy];
-                      p[i] = v;
-                      setPrivacy(p);
-                    }}
-                  />
-                </div>
-              ))}
-            </>
+            </div>
           )}
 
           {section === "preferences" && (
-            <>
-              <h2 className="font-semibold text-lg mb-6">Preferences</h2>
-              <div className="space-y-6">
-                <div>
-                  <label className="text-sm font-medium block mb-2">Language</label>
-                  <select className="w-full max-w-xs px-4 py-3 rounded-xl bg-gray-50 text-sm outline-none">
-                    <option>English</option>
-                    <option>Français</option>
-                    <option>العربية</option>
-                  </select>
-                </div>
-                <div className="pt-6 border-t border-gray-100">
-                  <h3 className="font-semibold text-sm mb-2">Deactivate account</h3>
-                  <p className="text-xs text-gray-500 mb-4">
-                    Temporarily hide your company profile and pause listings. You can reactivate anytime by signing
-                    back in.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setShowDeactivate(true)}
-                    className="px-4 py-2 border border-amber/40 text-amber-800 rounded-xl text-sm hover:bg-amber-light"
-                  >
-                    Deactivate account
-                  </button>
-                </div>
+            <div className="flex flex-col gap-8">
+              <div>
+                <h3 className="font-serif text-2xl text-gray-900 font-medium mb-1">App Preferences</h3>
+                <p className="text-xs text-gray-400">Configure language options and preferences.</p>
               </div>
-            </>
+
+              <div className="max-w-xs">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">Display Language</label>
+                <select className="w-full px-4 py-3 rounded-2xl bg-gray-50 text-sm outline-none border border-gray-200 focus:border-[#0B1E36] transition-colors cursor-pointer">
+                  <option>English</option>
+                  <option>Français</option>
+                  <option>العربية</option>
+                </select>
+              </div>
+            </div>
           )}
         </div>
       </div>
 
+      {/* Deactivate account modal (asks only for password) */}
       <Modal open={showDeactivate} onClose={() => setShowDeactivate(false)} className="max-w-md">
-        <div className="bg-amber-light rounded-t-2xl px-6 py-5 flex gap-4 items-start">
-          <div className="w-10 h-10 rounded-full bg-amber/20 flex items-center justify-center text-amber-800 text-lg flex-shrink-0">
+        <div className="bg-amber-50 border-b border-amber-100 rounded-t-2xl px-6 py-5 flex gap-4 items-start">
+          <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-lg flex-shrink-0">
             !
           </div>
           <div>
-            <h3 className="font-semibold text-amber-900 text-lg">Deactivate your company account?</h3>
-            <p className="text-sm text-amber-800/80 mt-1">Your profile and listings will be hidden until you reactivate.</p>
+            <h3 className="font-semibold text-amber-900 text-base">Deactivate account?</h3>
+            <p className="text-xs text-amber-800/80 mt-1">This will temporarily hide your profile from employers.</p>
           </div>
         </div>
         <div className="p-6">
-          <p className="text-sm text-gray-600 mb-4">While your account is deactivated:</p>
-          <ul className="space-y-3 text-sm text-gray-600 mb-6">
-            {[
-              { ok: false, text: "Your company won't appear in professional searches" },
-              { ok: false, text: "Active announcements will be paused (applicants are notified)" },
-              { ok: true, text: "Your company data and applicant history are kept safe" },
-              { ok: true, text: "Reactivate instantly at any time by signing back in" },
-            ].map((item) => (
-              <li key={item.text} className="flex items-start gap-2">
-                <span className={item.ok ? "text-green-600" : "text-amber-600"}>{item.ok ? "✓" : "−"}</span>
-                {item.text}
-              </li>
-            ))}
-          </ul>
-          <label className="text-xs text-gray-500 block mb-2">Reason for deactivating (optional)</label>
-          <select
-            value={deactivateReason}
-            onChange={(e) => setDeactivateReason(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-gray-50 text-sm mb-4 outline-none"
-          >
-            <option value="">Select a reason...</option>
-            <option>Pausing hiring</option>
-            <option>Company restructuring</option>
-            <option>Privacy concerns</option>
-            <option>Other</option>
-          </select>
-          <label className="text-xs text-gray-500 block mb-2">Confirm with your password</label>
+          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">Enter Password to Confirm</label>
           <input
             type="password"
             value={deactivatePassword}
             onChange={(e) => setDeactivatePassword(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-gray-50 text-sm mb-4 outline-none"
-            placeholder="Your password"
+            placeholder="Enter your account password"
+            className="w-full px-4 py-3 rounded-2xl bg-gray-50 text-sm mb-4 outline-none border border-gray-200 focus:border-amber-400 transition-colors"
           />
-          {accountError ? (
-            <p className="text-sm text-red-600 mb-4">{accountError}</p>
-          ) : null}
-          <div className="flex gap-3">
+          {accountError && <p className="text-xs text-red-600 mb-4 font-medium">{accountError}</p>}
+          <div className="flex gap-3 mt-2">
             <button
               type="button"
               onClick={() => setShowDeactivate(false)}
-              className="flex-1 py-3 border border-gray-200 rounded-xl text-sm font-medium hover:bg-gray-50"
+              className="flex-1 py-3 border border-gray-200 rounded-2xl text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
@@ -379,108 +320,92 @@ export default function SettingsPage() {
               type="button"
               disabled={!deactivatePassword || accountLoading}
               onClick={handleDeactivate}
-              className="flex-1 py-3 bg-amber text-white rounded-xl text-sm font-medium hover:bg-amber/90 disabled:opacity-50"
+              className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl text-xs font-semibold transition-colors disabled:opacity-50"
             >
-              {accountLoading ? "Deactivating…" : "Yes, Deactivate"}
+              {accountLoading ? "Deactivating…" : "Confirm Deactivation"}
             </button>
           </div>
         </div>
       </Modal>
 
-      <Modal open={showDelete} onClose={() => setShowDelete(false)} className="max-w-lg">
-        <div className="px-6 py-5 border-b border-red-100">
-          <div className="flex gap-3 items-start text-red-700">
-            <span className="text-xl">⚠</span>
-            <div>
-              <h3 className="font-semibold text-lg">Delete your company account?</h3>
-              <p className="text-sm text-red-600/80 mt-1">This action is permanent and cannot be undone.</p>
-            </div>
+      {/* Delete account modal (asks only for password) */}
+      <Modal open={showDelete} onClose={() => setShowDelete(false)} className="max-w-md">
+        <div className="bg-red-50 border-b border-red-100 rounded-t-2xl px-6 py-5 flex gap-4 items-start">
+          <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold text-lg flex-shrink-0">
+            ⚠
+          </div>
+          <div>
+            <h3 className="font-semibold text-red-950 text-base">Delete account permanently?</h3>
+            <p className="text-xs text-red-600/80 mt-1">This action is permanent and completely irreversible.</p>
           </div>
         </div>
         <div className="p-6">
-          <p className="text-sm text-gray-600 mb-4">
-            Deleting your account will <strong>permanently remove</strong> all of the following:
+          <p className="text-xs text-gray-500 leading-relaxed mb-4">
+            Deleting your account will permanently wipe your profile details, application logs, and portfolio data.
           </p>
-          <div className="bg-red-50 border border-red-100 rounded-xl p-4 mb-6 text-sm text-gray-700 space-y-2">
-            <p>• Your company profile and public presence</p>
-            <p>• All job announcements and applicant data</p>
-            <p>• Billing and subscription history</p>
-            <p>• Connected account data</p>
-          </div>
-          <label className="text-xs text-gray-500 block mb-2">Your password</label>
+          
+          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">Enter Password to Confirm</label>
           <input
             type="password"
             value={deletePassword}
             onChange={(e) => setDeletePassword(e.target.value)}
-            placeholder="Enter your password"
-            className="w-full px-4 py-3 rounded-xl bg-gray-50 text-sm mb-4 outline-none focus:border-red-300"
+            placeholder="Enter your account password"
+            className="w-full px-4 py-3 rounded-2xl bg-gray-50 text-sm mb-4 outline-none border border-gray-200 focus:border-red-400 transition-colors"
           />
-          <label className="text-xs text-gray-500 block mb-2">To confirm, type TECHCORP below</label>
-          <input
-            value={deleteConfirm}
-            onChange={(e) => setDeleteConfirm(e.target.value)}
-            placeholder="Type TECHCORP to confirm"
-            className="w-full px-4 py-3 rounded-xl bg-gray-50 text-sm mb-4 outline-none focus:border-red-300"
-          />
-          <label className="flex items-start gap-3 text-xs text-gray-600 mb-6 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={deleteChecked}
-              onChange={(e) => setDeleteChecked(e.target.checked)}
-              className="mt-0.5"
-            />
-            I understand that this action is <strong>irreversible</strong> and all data will be permanently deleted.
-          </label>
-          <div className="flex gap-3">
+          {accountError && <p className="text-xs text-red-600 mb-4 font-medium">{accountError}</p>}
+          <div className="flex gap-3 mt-2">
             <button
               type="button"
               onClick={() => setShowDelete(false)}
-              className="flex-1 py-3 border border-gray-200 rounded-xl text-sm font-medium"
+              className="flex-1 py-3 border border-gray-200 rounded-2xl text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
             <button
               type="button"
-              disabled={deleteConfirm !== "TECHCORP" || !deleteChecked || !deletePassword || accountLoading}
+              disabled={!deletePassword || accountLoading}
               onClick={handleDelete}
-              className="flex-1 py-3 bg-red-400 text-white rounded-xl text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-red-500"
+              className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-2xl text-xs font-semibold transition-colors disabled:opacity-50"
             >
-              {accountLoading ? "Deleting…" : "Delete Account Permanently"}
+              {accountLoading ? "Deleting…" : "Delete Account"}
             </button>
           </div>
-          <p className="text-xs text-gray-400 text-center mt-4">
-            You will receive a confirmation email at contact@techcorp.dz
-          </p>
         </div>
       </Modal>
 
+      {/* Change email modal */}
       <Modal open={showChangeEmail} onClose={() => setShowChangeEmail(false)} className="max-w-md">
         <div className="p-6">
-          <h3 className="font-semibold text-lg mb-2">Change email address</h3>
-          <p className="text-sm text-gray-500 mb-4">
-            We&apos;ll send a verification link to your new email. Open it at{" "}
-            <code className="text-xs bg-gray-100 px-1 rounded">/account/email/verify/…</code> on this app.
+          <h3 className="font-serif text-lg text-gray-900 font-medium mb-1">Change email address</h3>
+          <p className="text-xs text-gray-400 mb-5">
+            A confirmation link will be sent to the new email address.
           </p>
-          <label className="text-xs text-gray-500 block mb-1">New email</label>
+
+          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">New Email Address</label>
           <input
             type="email"
             value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-gray-50 text-sm mb-4 outline-none"
+            placeholder="e.g. candidate@newemail.com"
+            className="w-full px-4 py-3 rounded-2xl bg-gray-50 text-sm mb-4 outline-none border border-gray-200 focus:border-[#0B1E36] transition-colors"
           />
-          <label className="text-xs text-gray-500 block mb-1">Current password</label>
+
+          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">Current Password</label>
           <input
             type="password"
             value={emailChangePassword}
             onChange={(e) => setEmailChangePassword(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-gray-50 text-sm mb-4 outline-none"
+            placeholder="Confirm with password"
+            className="w-full px-4 py-3 rounded-2xl bg-gray-50 text-sm mb-4 outline-none border border-gray-200 focus:border-[#0B1E36] transition-colors"
           />
-          {accountError ? <p className="text-sm text-red-600 mb-4">{accountError}</p> : null}
-          <div className="flex gap-3">
+
+          {accountError && <p className="text-xs text-red-600 mb-4 font-medium">{accountError}</p>}
+          
+          <div className="flex gap-3 mt-2">
             <button
               type="button"
               onClick={() => setShowChangeEmail(false)}
-              className="flex-1 py-3 border border-gray-200 rounded-xl text-sm"
+              className="flex-1 py-3 border border-gray-200 rounded-2xl text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
@@ -488,7 +413,7 @@ export default function SettingsPage() {
               type="button"
               disabled={!newEmail.trim() || accountLoading}
               onClick={handleChangeEmail}
-              className="flex-1 py-3 bg-navy text-white rounded-xl text-sm disabled:opacity-50"
+              className="flex-1 py-3 bg-[#0B1E36] hover:bg-[#132c4d] text-white rounded-2xl text-xs font-semibold transition-colors disabled:opacity-50"
             >
               {accountLoading ? "Sending…" : "Send verification"}
             </button>

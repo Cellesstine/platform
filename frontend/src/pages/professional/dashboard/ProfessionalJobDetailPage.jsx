@@ -79,13 +79,13 @@ export default function ProfessionalJobDetailPage() {
             </div>
           </div>
 
-          <h1 className="font-serif text-3xl text-navy mb-4">{job.role}</h1>
+          <h1 className="font-serif text-3xl text-navy mb-4">{job.role_display || job.role}</h1>
 
           <div className="flex flex-wrap gap-2 mb-8">
-            <Tag variant="remote">{job.job_type}</Tag>
+            <Tag variant="remote">{job.job_type_display || job.job_type}</Tag>
             <Tag variant="new">{job.status}</Tag>
-            <Tag>{job.wilaya}</Tag>
-            <Tag>{job.industry}</Tag>
+            <Tag>{job.wilaya_display || job.wilaya}</Tag>
+            <Tag>{job.industry_display || job.industry}</Tag>
           </div>
 
           <section className="mb-8">
@@ -125,14 +125,14 @@ export default function ProfessionalJobDetailPage() {
 
         <div className="flex flex-col gap-4">
           <div className="bg-white rounded-2xl p-6 shadow-sm sticky top-4">
-            <p className="font-serif text-2xl text-navy mb-1">{job.role}</p>
+            <p className="font-serif text-2xl text-navy mb-1">{job.role_display || job.role}</p>
             <p className="text-xs text-gray-400 mb-6">{job.enterprise_name}</p>
 
             <dl className="space-y-3 text-sm mb-6">
               {[
-                ["Location", job.wilaya],
+                ["Location", job.wilaya_display || job.wilaya],
                 ["Address", job.address],
-                ["Contract", job.job_type],
+                ["Contract", job.job_type_display || job.job_type],
                 ["Experience", String(job.experience_required ?? 0)],
                 ["Deadline", job.deadline || "Not set"],
               ].map(([k, v]) => (
@@ -146,15 +146,9 @@ export default function ProfessionalJobDetailPage() {
             <button
               type="button"
               onClick={() => setShowApply(true)}
-              className="w-full py-3 bg-navy text-white rounded-xl text-sm font-medium hover:bg-navy/90 mb-3 flex items-center justify-center gap-2"
+              className="w-full py-3 bg-navy text-white rounded-xl text-sm font-medium hover:bg-navy/90 flex items-center justify-center gap-2"
             >
               Apply Now →
-            </button>
-            <button
-              type="button"
-              className="w-full py-3 border border-gray-200 rounded-xl text-sm font-medium hover:bg-gray-50 flex items-center justify-center gap-2"
-            >
-              ☆ Save for later
             </button>
           </div>
 
@@ -171,7 +165,7 @@ export default function ProfessionalJobDetailPage() {
                 <div>
                 <p className="font-semibold text-sm">{job.enterprise_name}</p>
                   <p className="text-xs text-gray-400">
-                    {job.wilaya} · {job.industry}
+                    {job.wilaya_display || job.wilaya} · {job.industry_display || job.industry}
                   </p>
                 </div>
               </div>

@@ -6,25 +6,33 @@ export async function listApplications(params = {}) {
   return Array.isArray(data) ? data : [];
 }
 
-/** Resolve individual profile UUID from prior applications (same email). */
 export async function syncIndividualProfileId() {
   const cached = getIndividualProfileId();
   if (cached) return cached;
 
-  const email = getUserEmail();
-  if (!email) return null;
-
   try {
-    const applications = await listApplications();
-    const match = applications.find(
-      (app) => app.applicant_email?.toLowerCase() === email.toLowerCase()
-    );
-    if (match?.applicant) {
-      setIndividualProfileId(match.applicant);
-      return match.applicant;
+    const { data } = await api.get("/profile/me/");
+    if (data?.id) {
+      setIndividualProfileId(data.id);
+      return data.id;
     }
-  } catch {
-    // Caller handles missing applicant id.
+  } catch (err) {
+    // Fallback to prior applications
+    const email = getUserEmail();
+    if (!email) return null;
+
+    try {
+      const applications = await listApplications();
+      const match = applications.find(
+        (app) => app.applicant_email?.toLowerCase() === email.toLowerCase()
+      );
+      if (match?.applicant) {
+        setIndividualProfileId(match.applicant);
+        return match.applicant;
+      }
+    } catch {
+      // Caller handles missing applicant id.
+    }
   }
   return null;
 }

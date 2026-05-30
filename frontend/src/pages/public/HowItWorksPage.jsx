@@ -1,5 +1,4 @@
 import { useState } from "react";
-import Navbar from "../../components/Navbar";
 
 const steps = {
   professionals: [
@@ -21,7 +20,6 @@ export default function HowItWorksPage() {
 
   return (
     <div className="min-h-screen bg-cream">
-      <Navbar />
       <div className="flex flex-col items-center px-6 pt-20 pb-16 text-center">
         <p className="linkio-eyebrow mb-4 justify-center">Simple. Transparent. Algerian.</p>
         <h1 className="font-serif text-5xl font-normal text-navy-deep mb-5">

@@ -58,6 +58,7 @@ import ProfessionalJobDetailPage from "./pages/professional/dashboard/Profession
 import ProfessionalProfilePage from "./pages/professional/dashboard/ProfessionalProfilePage";
 import ProfessionalProfileEditPage from "./pages/professional/dashboard/ProfessionalProfileEditPage";
 import ProfessionalSettingsPage from "./pages/professional/dashboard/ProfessionalSettingsPage";
+import ProfessionalApplicationsPage from "./pages/professional/dashboard/ProfessionalApplicationsPage";
 
 export default function App() {
   return (
@@ -180,6 +181,8 @@ export default function App() {
           <Route index element={<ProfessionalDashboardHome />} />
           <Route path="announcements" element={<ProfessionalAnnouncementsPage />} />
           <Route path="announcements/:id" element={<ProfessionalJobDetailPage />} />
+          <Route path="applications" element={<ProfessionalApplicationsPage />} />
+          <Route path="find-workers" element={<FindWorkersPage />} />
           <Route path="profile" element={<ProfessionalProfilePage />} />
           <Route path="profile/edit" element={<ProfessionalProfileEditPage />} />
           <Route path="settings" element={<ProfessionalSettingsPage />} />

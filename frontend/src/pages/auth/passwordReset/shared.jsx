@@ -45,17 +45,17 @@ export function PasswordResetStepper({ current }) {
       {steps.map((step, i) => {
         const done = step.n < current;
         const active = step.n === current;
-        const activeColor = current === 1 ? "bg-red border-red text-white" : "bg-navy border-navy text-white";
+        const activeColor = "bg-[#4c0527] border-[#4c0527] text-white";
 
         return (
           <div key={step.label} className="flex items-center">
             {i > 0 && (
-              <div className={`w-10 md:w-14 h-px mx-1 md:mx-2 ${done ? "bg-navy" : "bg-gray-200"}`} />
+              <div className={`w-10 md:w-14 h-px mx-1 md:mx-2 ${done ? "bg-[#4c0527]" : "bg-gray-200"}`} />
             )}
             <div className="flex items-center gap-2">
               <div
                 className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium border transition-all
-                  ${done ? "bg-navy border-navy text-white" : ""}
+                  ${done ? "bg-[#4c0527] border-[#4c0527] text-white" : ""}
                   ${active ? `${activeColor} text-white` : ""}
                   ${!done && !active ? "border-gray-200 text-gray-400 bg-white" : ""}
                 `}
@@ -84,7 +84,7 @@ export function GradientButton({ children, onClick, type = "button", disabled = 
       onClick={onClick}
       disabled={disabled}
       className={`w-full py-3.5 rounded-linkio text-sm font-semibold text-white transition-all
-        bg-navy hover:bg-navy-deep
+        bg-[#4c0527] hover:bg-[#330319]
         disabled:opacity-40 disabled:cursor-not-allowed ${className}`}
     >
       {children}
@@ -95,7 +95,6 @@ export function GradientButton({ children, onClick, type = "button", disabled = 
 export function PasswordResetShell({ children, topbar }) {
   return (
     <div className="min-h-screen bg-cream flex flex-col font-sans">
-      {topbar}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-10 text-center">{children}</div>
     </div>
   );

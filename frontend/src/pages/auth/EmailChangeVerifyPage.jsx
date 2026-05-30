@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { verifyEmailChange } from "../../services/accountApi";
-import { parseApiError, getDashboardPath, getUserRole } from "../../services/auth";
+import { parseApiError, getUserRole } from "../../services/auth";
 import LinkioBrand from "../../components/LinkioBrand";
 
 /**

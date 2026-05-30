@@ -243,7 +243,7 @@ export default function ResetPasswordPage() {
         )}
 
         <GradientButton type="submit" disabled={!canSubmit || submitting}>
-          {submitting ? "Processing…" : (fromSettings && isSetPassword ? "Set Password →" : "Reset Password →")}
+          {submitting ? "Processing…" : (fromSettings && isSetPassword ? "Set Password" : "Reset Password")}
         </GradientButton>
       </form>
     </PasswordResetShell>

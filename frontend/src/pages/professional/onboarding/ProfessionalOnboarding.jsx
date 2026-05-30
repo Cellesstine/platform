@@ -13,7 +13,6 @@ import {
   PrimaryButton,
 } from "../../../components/ui";
 import { getPortal } from "../../../theme/portal";
-import { canSubmitAccountForm } from "../../../utils/accountValidation";
 import EmailVerificationPending from "../../../components/EmailVerificationPending";
 import {
   saveEmailVerificationSession,
@@ -26,7 +25,6 @@ import {
   setupIndividualProfile,
   postIndividualProfileSetup,
   searchSkills,
-  createSkill,
 } from "../../../services/profilesApi";
 
 const WILAYA_CHOICES = [
@@ -85,12 +83,7 @@ const AVAILABILITY_CHOICES = [
   { value: "NOT_AVAILABLE", label: "Not Available" },
 ];
 
-const profBenefits = [
-  "Build a verified skill profile",
-  "Apply to jobs across 69 wilayas",
-  "Receive freelance requests directly",
-  "One profile — employee and freelancer",
-];
+
 
 export function ProfessionalAccountPage() {
   const navigate = useNavigate();
@@ -100,19 +93,16 @@ export function ProfessionalAccountPage() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
 
-  const canContinue = canSubmitAccountForm({
-    email,
-    password,
-    confirmPassword,
-    agreedToTerms,
-  });
+  const canContinue = email.trim() !== "" && password !== "" && confirmPassword !== "" && agreedToTerms;
 
   const handleContinue = async () => {
     if (!canContinue || loading) return;
     const trimmed = email.trim();
     setLoading(true);
     setError("");
+    setFieldErrors({});
     try {
       await apiRegister({
         email: trimmed,
@@ -125,65 +115,112 @@ export function ProfessionalAccountPage() {
         state: { email: trimmed, expiresAt },
       });
     } catch (err) {
-      setError(parseApiError(err, "Unable to create your account. Please try again."));
+      const data = err.response?.data;
+      if (data && typeof data === "object" && !Array.isArray(data)) {
+        setFieldErrors(data);
+        if (data.non_field_errors) {
+          setError(Array.isArray(data.non_field_errors) ? data.non_field_errors[0] : data.non_field_errors);
+        } else if (data.detail) {
+          setError(data.detail);
+        }
+      } else {
+        setError(parseApiError(err, "Unable to create your account. Please try again."));
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const profLeft = (
-    <>
-      <p className="text-[11px] tracking-widest text-white/50 uppercase mb-1">Professional</p>
-      <p className="text-[11px] tracking-widest text-gold-light uppercase mb-8">Step 1 of 3 — Account</p>
-      <h2 className="font-serif text-4xl font-normal leading-snug mb-10">
-        Your next opportunity starts here.
+    <div className="text-left flex flex-col items-start justify-center w-full max-w-sm mx-auto">
+      <p className="text-[10px] tracking-[0.2em] text-white/60 uppercase mb-2">PROFESSIONAL</p>
+      <h2 className="font-serif text-3xl font-normal text-white leading-snug mb-6 italic">
+        Position your expertise.<br />Accelerate your career.
       </h2>
-      <ul className="space-y-4">
-        {profBenefits.map((b) => (
-          <li key={b} className="flex items-start gap-3 text-sm text-white/90">
-            <span className="w-5 h-5 rounded-full bg-white/15 flex items-center justify-center text-gold-light text-xs flex-shrink-0 mt-0.5">
-              ✓
-            </span>
-            {b}
-          </li>
-        ))}
-      </ul>
-    </>
+      <p className="text-sm text-white/70 leading-relaxed font-light">
+        Create a premium profile, showcase your achievements, and connect with top enterprises and projects.
+      </p>
+    </div>
   );
 
   const theme = getPortal("professional");
 
   return (
-    <PortalSplitLayout portal="professional" leftContent={profLeft} backTo="/">
-      <PageTitle title="Create your account" subtitle="Your login credentials for Linkio." />
+    <PortalSplitLayout portal="professional" leftContent={profLeft}>
+      <PageTitle title="Create your account" subtitle={<em className="italic">Enter professional credentials.</em>} />
+
+      {/* Sleek Floating Switcher Cards inside a rounded-rectangle wrapper */}
+      <div className="bg-white/95 border border-gray-150 p-2 rounded-[24px] shadow-[0_16px_36px_rgba(27,58,92,0.12)] w-full max-w-xs mx-auto mb-8 select-none flex gap-2 hover:shadow-[0_20px_44px_rgba(27,58,92,0.16)] transition-all duration-300">
+        {/* Professional Switch Card */}
+        <button
+          type="button"
+          className="flex-1 py-2.5 px-4 text-xs font-semibold rounded-[16px] cursor-default transition-all duration-300 border border-navy bg-navy text-white shadow-[0_4px_12px_rgba(27,58,92,0.2)] scale-[1.02] text-center"
+        >
+          Professional
+        </button>
+
+        {/* Business Switch Card */}
+        <button
+          type="button"
+          onClick={() => navigate("/register")}
+          className="flex-1 py-2.5 px-4 text-xs font-semibold rounded-[16px] cursor-pointer transition-all duration-300 border border-transparent text-gray-400 hover:border-red hover:text-red hover:bg-red/[0.02]"
+        >
+          Business
+        </button>
+      </div>
 
       <Field label="Email Address" className="mb-4">
         <input
           type="email"
           placeholder="you@example.com"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (fieldErrors.email) setFieldErrors({ ...fieldErrors, email: null });
+          }}
           className={inputClass}
         />
+        {fieldErrors.email && (
+          <p className="text-xs text-red-600 mt-1 font-medium select-none animate-fade-in">
+            {Array.isArray(fieldErrors.email) ? fieldErrors.email[0] : fieldErrors.email}
+          </p>
+        )}
       </Field>
+
       <Field label="Password" className="mb-4">
         <input
           type="password"
           placeholder="Enter a password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            if (fieldErrors.password) setFieldErrors({ ...fieldErrors, password: null });
+          }}
           className={inputClass}
         />
-        <p className="text-xs text-gray-500 mt-1.5">At least 8 characters</p>
+        {fieldErrors.password && (
+          <p className="text-xs text-red-600 mt-1 font-medium select-none animate-fade-in">
+            {Array.isArray(fieldErrors.password) ? fieldErrors.password[0] : fieldErrors.password}
+          </p>
+        )}
       </Field>
+
       <Field label="Confirm Password" className="mb-4">
         <input
           type="password"
-          placeholder="Repeat your password"
+          placeholder="Confirm password"
           value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
+          onChange={(e) => {
+            setConfirmPassword(e.target.value);
+            if (fieldErrors.password_confirm) setFieldErrors({ ...fieldErrors, password_confirm: null });
+          }}
           className={inputClass}
         />
+        {fieldErrors.password_confirm && (
+          <p className="text-xs text-red-600 mt-1 font-medium select-none animate-fade-in">
+            {Array.isArray(fieldErrors.password_confirm) ? fieldErrors.password_confirm[0] : fieldErrors.password_confirm}
+          </p>
+        )}
       </Field>
 
       <FormDivider />
@@ -245,6 +282,20 @@ export function ProfessionalProfileSetupPage() {
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const [wilayaOpen, setWilayaOpen] = useState(false);
+  const [wilayaSearch, setWilayaSearch] = useState("");
+  const wilayaDropdownRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (wilayaDropdownRef.current && !wilayaDropdownRef.current.contains(event.target)) {
+        setWilayaOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if (!isEmailVerified("professional")) {
@@ -320,27 +371,32 @@ export function ProfessionalProfileSetupPage() {
   };
 
   return (
-    <OnboardingStepLayout portal="professional" steps={["Account", "Basic Info", "Professional Info"]} current={2}>
+    <OnboardingStepLayout portal="professional" steps={["Account", "Basic Info", "Professional Info"]} current={2} hideHeader={true}>
       <PageTitle
         title="Set up your profile — Basic Info"
         subtitle="This information will be visible to businesses on the platform."
       />
 
+      {/* Profile Photo Uploader */}
       <div className="flex flex-col items-center mb-8">
-        <button
-          type="button"
+        <div
           onClick={handlePhotoClick}
-          className="w-24 h-24 rounded-full border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:border-navy hover:text-navy transition-colors overflow-hidden relative bg-white"
+          className="relative w-28 h-28 rounded-full border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-navy hover:shadow-lg transition-all duration-300 overflow-hidden group bg-white"
         >
           {avatarPreview ? (
-            <img src={avatarPreview} alt="Avatar Preview" className="w-full h-full object-cover" />
-          ) : (
             <>
-              <span className="text-2xl mb-1">👤</span>
-              <span className="text-xs">Upload photo</span>
+              <img src={avatarPreview} alt="Avatar Preview" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <span className="text-white text-xs font-semibold">Change Photo</span>
+              </div>
             </>
+          ) : (
+            <div className="flex flex-col items-center text-gray-400 group-hover:text-navy transition-colors duration-300">
+              <span className="text-3xl mb-1 group-hover:scale-110 transition-transform duration-300">👤</span>
+              <span className="text-[10px] uppercase tracking-wider font-semibold">Upload Photo</span>
+            </div>
           )}
-        </button>
+        </div>
         <input
           ref={photoRef}
           type="file"
@@ -348,54 +404,105 @@ export function ProfessionalProfileSetupPage() {
           className="hidden"
           onChange={handlePhotoChange}
         />
-        <p className="text-xs text-gray-400 mt-2">JPG or PNG, max 2MB</p>
+        <p className="text-[10px] text-gray-400 mt-2 tracking-wider">JPG or PNG, max 2MB</p>
       </div>
 
+      {/* Grid Basic Info Fields */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Field label="First Name *">
           <input
-            placeholder="Yacine"
+            placeholder="first name"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
-            className={inputClass}
+            className={`${inputClass} hover:border-gray-400 focus:border-navy focus:shadow-[0_0_15px_rgba(27,45,82,0.05)] transition-all duration-300`}
           />
         </Field>
         <Field label="Last Name *">
           <input
-            placeholder="Benali"
+            placeholder="last name"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
-            className={inputClass}
+            className={`${inputClass} hover:border-gray-400 focus:border-navy focus:shadow-[0_0_15px_rgba(27,45,82,0.05)] transition-all duration-300`}
           />
         </Field>
         <Field label="Phone Number *">
           <input
-            placeholder="e.g. 0655000000"
+            placeholder="+213 655 00 00 00"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className={inputClass}
+            className={`${inputClass} hover:border-gray-400 focus:border-navy focus:shadow-[0_0_15px_rgba(27,45,82,0.05)] transition-all duration-300`}
           />
         </Field>
         <Field label="Wilaya *">
-          <select
-            value={wilaya}
-            onChange={(e) => setWilaya(e.target.value)}
-            className={`${inputClass} bg-white`}
-          >
-            <option value="">Select Wilaya</option>
-            {WILAYA_CHOICES.map((w) => (
-              <option key={w.value} value={w.value}>
-                {w.label}
-              </option>
-            ))}
-          </select>
+          <div ref={wilayaDropdownRef} className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setWilayaOpen(!wilayaOpen);
+                setWilayaSearch("");
+              }}
+              className={`${inputClass} w-full bg-white text-left flex justify-between items-center hover:border-gray-400 focus:border-navy focus:shadow-[0_0_15px_rgba(27,45,82,0.05)] transition-all duration-300`}
+            >
+              <span className={wilaya ? "text-gray-900" : "text-gray-400"}>
+                {wilaya ? WILAYA_CHOICES.find((w) => w.value === wilaya)?.label : "Select Wilaya"}
+              </span>
+              <span
+                className="text-gray-400 text-xs transition-transform duration-300"
+                style={{ transform: wilayaOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+              >
+                ▼
+              </span>
+            </button>
+
+            {wilayaOpen && (
+              <div className="absolute z-30 w-full mt-2 bg-white/95 backdrop-blur-md border border-gray-150 rounded-2xl shadow-xl overflow-hidden animate-fade-in">
+                <div className="p-2 border-b border-gray-100">
+                  <input
+                    type="text"
+                    placeholder="Search wilaya..."
+                    value={wilayaSearch}
+                    onChange={(e) => setWilayaSearch(e.target.value)}
+                    className="w-full px-3 py-1.5 text-xs border border-gray-150 rounded-xl focus:border-navy focus:outline-none bg-gray-50/50"
+                    autoFocus
+                  />
+                </div>
+                <div className="max-h-48 overflow-y-auto py-1">
+                  {WILAYA_CHOICES.filter((w) =>
+                    w.label.toLowerCase().includes(wilayaSearch.toLowerCase())
+                  ).map((w) => (
+                    <button
+                      key={w.value}
+                      type="button"
+                      onClick={() => {
+                        setWilaya(w.value);
+                        setWilayaOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-xs flex justify-between items-center hover:bg-navy/5 transition-colors ${
+                        wilaya === w.value ? "bg-navy/5 text-navy font-semibold" : "text-gray-700"
+                      }`}
+                    >
+                      <span>{w.label}</span>
+                      {wilaya === w.value && <span className="text-navy">✓</span>}
+                    </button>
+                  ))}
+                  {WILAYA_CHOICES.filter((w) =>
+                    w.label.toLowerCase().includes(wilayaSearch.toLowerCase())
+                  ).length === 0 && (
+                    <div className="px-4 py-3 text-xs text-gray-400 text-center italic">
+                      No results found
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </Field>
         <Field label="Address *" className="md:col-span-2">
           <input
-            placeholder="e.g. 12 Rue Didouche Mourad"
+            placeholder="Enter resedential address (Didouch Mourad)"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
-            className={inputClass}
+            className={`${inputClass} hover:border-gray-400 focus:border-navy focus:shadow-[0_0_15px_rgba(27,45,82,0.05)] transition-all duration-300`}
           />
         </Field>
       </div>
@@ -405,30 +512,21 @@ export function ProfessionalProfileSetupPage() {
           rows={4}
           value={bio}
           onChange={(e) => setBio(e.target.value)}
-          placeholder="Tell businesses what makes you stand out..."
-          className={`${inputClass} resize-y`}
+          placeholder="Write a brief, professional introduction highlighting your experience and passions..."
+          className={`${inputClass} resize-y hover:border-gray-400 focus:border-navy focus:shadow-[0_0_15px_rgba(27,45,82,0.05)] transition-all duration-300`}
         />
       </Field>
 
       <AlertError>{error}</AlertError>
 
-      <div className="flex justify-between items-center mt-8">
-        <button
-          type="button"
-          onClick={() =>
-            navigate("/professional/onboarding/verify-email", { state: email ? { email } : undefined })
-          }
-          className="text-sm text-gray-400 hover:text-gray-900"
-        >
-          ← Back
-        </button>
+      <div className="flex justify-end mt-8">
         <PrimaryButton
           portal="professional"
           loading={loading}
           onClick={handleContinue}
-          className="btn-linkio-navy px-10 py-3"
+          className="btn-linkio-navy px-10 py-3 rounded-full transition-colors duration-300"
         >
-          Next Step →
+          Next
         </PrimaryButton>
       </div>
     </OnboardingStepLayout>
@@ -496,20 +594,6 @@ export function ProfessionalDocumentsPage() {
     setSuggestions([]);
   };
 
-  const handleAddCustomSkill = async () => {
-    const trimmed = skillQuery.trim();
-    if (!trimmed) return;
-    try {
-      const newSkillObj = await createSkill({ name: trimmed, category: "OTHER" });
-      if (!selectedSkills.some((s) => s.id === newSkillObj.id)) {
-        setSelectedSkills([...selectedSkills, newSkillObj]);
-      }
-      setSkillQuery("");
-      setSuggestions([]);
-    } catch (err) {
-      setError(parseApiError(err, "Failed to register custom skill."));
-    }
-  };
 
   const handleRemoveSkill = (skillId) => {
     setSelectedSkills(selectedSkills.filter((s) => s.id !== skillId));
@@ -587,7 +671,15 @@ export function ProfessionalDocumentsPage() {
   };
 
   return (
-    <OnboardingStepLayout portal="professional" steps={["Account", "Basic Info", "Professional Info"]} current={3}>
+    <OnboardingStepLayout portal="professional" steps={["Account", "Basic Info", "Professional Info"]} current={3} hideHeader={true}>
+      <button
+        type="button"
+        onClick={() => navigate("/professional/onboarding/profile", { state: { email } })}
+        className="text-sm text-gray-400 hover:text-gray-950 transition-colors mb-6 inline-flex items-center gap-1.5 font-medium"
+      >
+        ← Back
+      </button>
+
       <PageTitle
         title="Set up your profile — Professional Details"
         subtitle="Provide your expertise and background to match with opportunities."
@@ -595,52 +687,91 @@ export function ProfessionalDocumentsPage() {
 
       <div className="space-y-6">
         {/* Core Professional Fields */}
-        <section className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-          <h3 className="font-semibold text-navy text-sm uppercase tracking-wider mb-2">Professional Info</h3>
+        <section className="bg-white/80 backdrop-blur-md p-6 rounded-3xl border border-gray-150 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-4 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ease-out">
+          <div className="flex items-center gap-2 border-b border-gray-100 pb-3 mb-2">
+            <h3 className="font-semibold text-navy text-sm uppercase tracking-wider">Professional Info</h3>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field label="Job / Professional Title *">
               <input
-                placeholder="e.g. Full Stack Developer"
+                placeholder="e.g. Senior Full Stack Engineer"
                 value={professionalTitle}
                 onChange={(e) => setProfessionalTitle(e.target.value)}
-                className={inputClass}
+                className={`${inputClass} hover:border-gray-400 focus:border-navy focus:shadow-[0_0_15px_rgba(27,45,82,0.05)] transition-all duration-300`}
               />
             </Field>
             <Field label="Years of Experience *">
               <input
                 type="number"
                 min="0"
+                placeholder="e.g. 5"
                 value={yearsExperience}
                 onChange={(e) => setYearsExperience(Math.max(0, parseInt(e.target.value) || 0))}
-                className={inputClass}
+                className={`${inputClass} hover:border-gray-400 focus:border-navy focus:shadow-[0_0_15px_rgba(27,45,82,0.05)] transition-all duration-300`}
               />
             </Field>
             <Field label="Availability *" className="md:col-span-2">
-              <select
-                value={availability}
-                onChange={(e) => setAvailability(e.target.value)}
-                className={`${inputClass} bg-white`}
-              >
-                {AVAILABILITY_CHOICES.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-1.5">
+                {AVAILABILITY_CHOICES.map((c) => {
+                  const isSelected = availability === c.value;
+                  let cardStyle = "";
+                  let dotColor = "";
+                  
+                  if (c.value === "AVAILABLE") {
+                    cardStyle = isSelected
+                      ? "border-emerald-500 bg-emerald-50/20 shadow-[0_8px_20px_rgba(16,185,129,0.15)] -translate-y-0.5 ring-1 ring-emerald-500/25 font-bold text-navy"
+                      : "border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/5 hover:-translate-y-0.5 hover:shadow-md";
+                    dotColor = "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]";
+                  } else if (c.value === "OPEN") {
+                    cardStyle = isSelected
+                      ? "border-blue-500 bg-blue-50/20 shadow-[0_8px_20px_rgba(59,130,246,0.15)] -translate-y-0.5 ring-1 ring-blue-500/25 font-bold text-navy"
+                      : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/5 hover:-translate-y-0.5 hover:shadow-md";
+                    dotColor = "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]";
+                  } else {
+                    cardStyle = isSelected
+                      ? "border-gray-400 bg-gray-50/50 shadow-[0_8px_20px_rgba(156,163,175,0.15)] -translate-y-0.5 ring-1 ring-gray-400/25 font-bold text-navy"
+                      : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/5 hover:-translate-y-0.5 hover:shadow-md";
+                    dotColor = "bg-gray-400";
+                  }
+
+                  return (
+                    <button
+                      key={c.value}
+                      type="button"
+                      onClick={() => setAvailability(c.value)}
+                      className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl border text-left transition-all duration-300 cursor-pointer ${cardStyle}`}
+                    >
+                      <span className={`w-2.5 h-2.5 rounded-full ${dotColor} flex-shrink-0`} />
+                      <span className={`text-xs font-semibold ${isSelected ? "text-navy font-bold" : "text-gray-600 font-medium"}`}>
+                        {c.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </Field>
           </div>
         </section>
 
         {/* Skills Section */}
-        <section className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-          <h3 className="font-semibold text-navy text-sm uppercase tracking-wider mb-2">Skills & Expertise</h3>
+        <section className="bg-white/80 backdrop-blur-md p-6 rounded-3xl border border-gray-150 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-4 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ease-out">
+          <div className="flex items-center gap-2 border-b border-gray-100 pb-3 mb-2">
+            <h3 className="font-semibold text-navy text-sm uppercase tracking-wider">Skills & Expertise</h3>
+          </div>
           
           <div className="relative">
-            <div className={`${inputClass} flex flex-wrap gap-2 items-center min-h-[48px] py-1.5 px-3 mb-2`}>
+            <div className={`${inputClass} flex flex-wrap gap-2 items-center min-h-[48px] py-2 px-3.5 mb-2 focus-within:border-navy focus-within:shadow-[0_0_15px_rgba(27,45,82,0.05)] transition-all duration-300`}>
               {selectedSkills.map((s) => (
-                <span key={s.id} className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-linkio ${theme.skillTag}`}>
+                <span
+                  key={s.id}
+                  className={`inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-full font-medium ${theme.skillTag} hover:scale-105 active:scale-95 transition-all duration-200 shadow-sm animate-fade-in`}
+                >
                   {s.name}
-                  <button type="button" onClick={() => handleRemoveSkill(s.id)} className="text-navy/60 hover:text-navy focus:outline-none font-bold">
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveSkill(s.id)}
+                    className="text-navy/60 hover:text-navy focus:outline-none font-bold text-sm"
+                  >
                     ×
                   </button>
                 </span>
@@ -649,34 +780,29 @@ export function ProfessionalDocumentsPage() {
                 type="text"
                 value={skillQuery}
                 onChange={(e) => setSkillQuery(e.target.value)}
-                placeholder={selectedSkills.length === 0 ? "Search skills or type a new one..." : "Add skill..."}
-                className="flex-1 bg-transparent border-0 outline-none p-0 text-xs focus:ring-0 focus:outline-none min-w-[150px] text-gray-700 placeholder-gray-400"
+                placeholder={selectedSkills.length === 0 ? "Search skills..." : "Add skill..."}
+                className="flex-grow bg-transparent border-0 outline-none p-0 text-xs focus:ring-0 focus:outline-none min-w-[150px] text-gray-700 placeholder-gray-400"
               />
             </div>
 
             {/* Suggestions dropdown */}
-            {(suggestions.length > 0 || skillQuery.trim()) && (
-              <div className="absolute z-25 w-full bg-white border border-gray-150 rounded-xl shadow-lg max-h-48 overflow-y-auto mt-1">
+            {(suggestions.length > 0 || (skillQuery.trim() && suggestions.length === 0)) && (
+              <div className="absolute z-25 w-full bg-white/95 backdrop-blur-md border border-gray-150 rounded-2xl shadow-xl max-h-48 overflow-y-auto mt-1 animate-fade-in">
                 {suggestions.map((s) => (
                   <button
                     key={s.id}
                     type="button"
                     onClick={() => handleSelectSkill(s)}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-50 text-xs flex justify-between items-center border-b border-gray-50 last:border-0"
+                    className="w-full text-left px-4 py-2.5 hover:bg-navy/5 text-xs flex justify-between items-center border-b border-gray-50 last:border-0 transition-colors"
                   >
-                    <span>{s.name}</span>
-                    <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{s.category}</span>
+                    <span className="font-medium text-gray-800">{s.name}</span>
+                    <span className="text-[10px] text-navy bg-pro-blue/40 px-2 py-0.5 rounded font-semibold uppercase tracking-wider">{s.category}</span>
                   </button>
                 ))}
-                {skillQuery.trim() && !suggestions.some(s => s.name.toLowerCase() === skillQuery.trim().toLowerCase()) && (
-                  <button
-                    type="button"
-                    onClick={handleAddCustomSkill}
-                    className="w-full text-left px-4 py-2.5 hover:bg-navy/5 text-xs text-navy font-semibold flex items-center gap-1.5 border-b border-gray-50 last:border-0"
-                  >
-                    <span>+ Add custom skill:</span>
-                    <span className="italic text-gray-700">"{skillQuery.trim()}"</span>
-                  </button>
+                {skillQuery.trim() && suggestions.length === 0 && (
+                  <div className="px-4 py-3 text-xs text-gray-400 italic text-center">
+                    No matching skills found
+                  </div>
                 )}
               </div>
             )}
@@ -684,75 +810,81 @@ export function ProfessionalDocumentsPage() {
         </section>
 
         {/* Work Experience Section */}
-        <section className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-          <h3 className="font-semibold text-navy text-sm uppercase tracking-wider mb-2">Work Experience (Optional)</h3>
+        <section className="bg-white/80 backdrop-blur-md p-6 rounded-3xl border border-gray-150 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-4 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ease-out">
+          <div className="flex items-center gap-2 border-b border-gray-100 pb-3 mb-2">
+            <h3 className="font-semibold text-navy text-sm uppercase tracking-wider">Work Experience (Optional)</h3>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field label="Company Name">
               <input
-                placeholder="e.g. Algiers Tech Solutions"
+                placeholder="Enter last employed company (e.g. Algiers Tech Solutions)"
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
-                className={inputClass}
+                className={`${inputClass} hover:border-gray-400 focus:border-navy focus:shadow-[0_0_15px_rgba(27,45,82,0.05)] transition-all duration-300`}
               />
             </Field>
             <Field label="Job Role">
               <input
-                placeholder="e.g. Frontend Engineer"
+                placeholder="Enter job title (e.g. Frontend Engineer)"
                 value={jobRole}
                 onChange={(e) => setJobRole(e.target.value)}
-                className={inputClass}
+                className={`${inputClass} hover:border-gray-400 focus:border-navy focus:shadow-[0_0_15px_rgba(27,45,82,0.05)] transition-all duration-300`}
               />
             </Field>
           </div>
         </section>
 
         {/* Education Section */}
-        <section className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-          <h3 className="font-semibold text-navy text-sm uppercase tracking-wider mb-2">Education (Optional)</h3>
+        <section className="bg-white/80 backdrop-blur-md p-6 rounded-3xl border border-gray-150 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-4 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ease-out">
+          <div className="flex items-center gap-2 border-b border-gray-100 pb-3 mb-2">
+            <h3 className="font-semibold text-navy text-sm uppercase tracking-wider">Education (Optional)</h3>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Field label="Institution">
               <input
-                placeholder="e.g. USTHB"
+                placeholder="Enter school or university name (e.g. USTHB)"
                 value={institution}
                 onChange={(e) => setInstitution(e.target.value)}
-                className={inputClass}
+                className={`${inputClass} hover:border-gray-400 focus:border-navy focus:shadow-[0_0_15px_rgba(27,45,82,0.05)] transition-all duration-300`}
               />
             </Field>
             <Field label="Degree">
               <input
-                placeholder="e.g. Bachelor"
+                placeholder="Enter degree type (e.g. Master's)"
                 value={degree}
                 onChange={(e) => setDegree(e.target.value)}
-                className={inputClass}
+                className={`${inputClass} hover:border-gray-400 focus:border-navy focus:shadow-[0_0_15px_rgba(27,45,82,0.05)] transition-all duration-300`}
               />
             </Field>
             <Field label="Field of Study">
               <input
-                placeholder="e.g. Computer Science"
+                placeholder="Enter major (e.g. Software Engineering)"
                 value={field}
                 onChange={(e) => setField(e.target.value)}
-                className={inputClass}
+                className={`${inputClass} hover:border-gray-400 focus:border-navy focus:shadow-[0_0_15px_rgba(27,45,82,0.05)] transition-all duration-300`}
               />
             </Field>
           </div>
         </section>
 
         {/* Portfolio & CV Section */}
-        <section className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-          <h3 className="font-semibold text-navy text-sm uppercase tracking-wider mb-2">Links & Documents</h3>
+        <section className="bg-white/80 backdrop-blur-md p-6 rounded-3xl border border-gray-150 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-4 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ease-out">
+          <div className="flex items-center gap-2 border-b border-gray-100 pb-3 mb-2">
+            <h3 className="font-semibold text-navy text-sm uppercase tracking-wider">Links & Documents</h3>
+          </div>
           <div className="space-y-4">
             <Field label="Portfolio URL (Optional)">
               <input
                 type="url"
-                placeholder="https://myportfolio.com"
+                placeholder="https://yourportfolio.dev"
                 value={portfolioUrl}
                 onChange={(e) => setPortfolioUrl(e.target.value)}
-                className={inputClass}
+                className={`${inputClass} hover:border-gray-400 focus:border-navy focus:shadow-[0_0_15px_rgba(27,45,82,0.05)] transition-all duration-300`}
               />
             </Field>
             
             <div className="pt-2">
-              <p className="text-sm font-semibold mb-2">Upload CV / Resume (Optional)</p>
+              <p className="text-sm font-semibold mb-2 text-gray-700">Upload CV / Resume (Optional)</p>
               <input
                 ref={fileRef}
                 type="file"
@@ -763,19 +895,21 @@ export function ProfessionalDocumentsPage() {
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
-                className="w-full border-2 border-dashed border-navy/15 rounded-linkio-lg py-10 flex flex-col items-center gap-2 hover:border-navy/40 transition-colors bg-ivory-warm"
+                className="w-full border-2 border-dashed border-navy/15 rounded-2xl py-12 flex flex-col items-center gap-3 cursor-pointer hover:border-navy hover:bg-navy/[0.02] hover:shadow-md transition-all duration-300 bg-ivory-warm group"
               >
                 {resumeFile ? (
                   <>
-                    <span className="text-3xl text-emerald-500">✓</span>
-                    <p className="text-sm font-semibold text-emerald-700">Resume Attached</p>
-                    <p className="text-xs text-gray-500">{resumeFile.name} ({(resumeFile.size / 1024).toFixed(0)} KB)</p>
+                    <span className="text-4xl text-emerald-500 group-hover:scale-110 transition-transform duration-300">✓</span>
+                    <p className="text-sm font-semibold text-emerald-700">Resume / CV Attached</p>
+                    <p className="text-xs text-gray-500 bg-white border border-gray-100 rounded-full px-3 py-1 shadow-sm font-medium">
+                      {resumeFile.name} ({(resumeFile.size / 1024).toFixed(0)} KB)
+                    </p>
                   </>
                 ) : (
                   <>
-                    <span className="text-3xl text-gray-300">📄</span>
-                    <p className="text-sm font-medium text-gray-700">Click to browse your CV</p>
-                    <p className="text-xs text-gray-400">PDF accepted · Maximum size 5 MB</p>
+                    <span className="text-4xl text-gray-300 group-hover:text-navy group-hover:scale-110 transition-all duration-300">📄</span>
+                    <p className="text-sm font-semibold text-gray-700 group-hover:text-navy transition-colors duration-300">Click to browse your CV</p>
+                    <p className="text-xs text-gray-400">PDF format accepted · Maximum size 5 MB</p>
                   </>
                 )}
               </button>
@@ -786,21 +920,14 @@ export function ProfessionalDocumentsPage() {
 
       <AlertError>{error}</AlertError>
 
-      <div className="flex justify-between items-center mt-8">
-        <button
-          type="button"
-          onClick={() => navigate("/professional/onboarding/profile", { state: { email } })}
-          className="text-sm text-gray-400 hover:text-gray-900"
-        >
-          ← Back
-        </button>
+      <div className="flex justify-end mt-8">
         <PrimaryButton
           portal="professional"
           loading={loading}
           onClick={handleSubmit}
-          className="btn-linkio-navy px-8 py-3"
+          className="btn-linkio-navy px-8 py-3 rounded-full transition-colors duration-300"
         >
-          Complete Profile setup →
+          Complete Profile setup
         </PrimaryButton>
       </div>
     </OnboardingStepLayout>

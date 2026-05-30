@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import LinkioBrand from "./LinkioBrand";
 import { isMockApiEnabled } from "../services/api";
 import {
   getEmailVerificationSession,
@@ -36,7 +35,7 @@ export default function EmailVerificationPending({ portal }) {
   const [resendLoading, setResendLoading] = useState(false);
   const [resendError, setResendError] = useState("");
   const [resendSuccess, setResendSuccess] = useState(false);
-  const [cooldown, setCooldown] = useState(0);
+  const [cooldown, setCooldown] = useState(60); // Starts with 60 seconds cooldown on mount
 
   const mockTo = isMockApiEnabled() ? getMockVerifyEmailTo(portal) : null;
   const mockLink = mockTo ? `${window.location.origin}${mockTo}` : null;
@@ -63,7 +62,7 @@ export default function EmailVerificationPending({ portal }) {
       await resendSignupVerificationEmail(portal, email);
       saveEmailVerificationSession(portal, email);
       setResendSuccess(true);
-      setCooldown(30);
+      setCooldown(60); // Wait 60 seconds on subsequent clicks
     } catch (err) {
       setResendError(getEmailVerificationErrorMessage(err));
     } finally {
@@ -74,74 +73,68 @@ export default function EmailVerificationPending({ portal }) {
   if (!email) return null;
 
   return (
-    <div className="min-h-screen bg-cream flex flex-col font-sans">
-      <div className="linkio-topbar">
-        <LinkioBrand />
-        <button
-          type="button"
-          onClick={() => navigate("/sign-in")}
-          className="text-sm text-gray-500 hover:text-navy transition-colors cursor-pointer"
-        >
-          ← Sign out
-        </button>
-      </div>
+    <div className="min-h-screen bg-cream flex flex-col items-center justify-between py-16 px-6 font-sans">
+      {/* Spacer to align content nicely vertically */}
+      <div className="h-4" />
 
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-10 text-center">
-        {/* Envelope Logo */}
-        <div className="w-20 h-20 bg-white shadow-sm border border-gray-100 rounded-2xl flex items-center justify-center mb-6">
+      {/* Main Content Container */}
+      <div className="flex flex-col items-center justify-center max-w-md w-full flex-grow text-center">
+        {/* Beautiful Custom Envelope Card Logo */}
+        <div className="w-24 h-24 bg-gradient-to-tr from-white to-gray-50 border border-gray-150 rounded-[28px] shadow-[0_12px_28px_rgba(27,58,92,0.06)] flex items-center justify-center mb-8 relative hover:scale-105 transition-transform duration-300">
           <svg
-            width="40"
-            height="40"
+            width="38"
+            height="38"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth="1.5"
+            strokeWidth="1.25"
             className={config.accentText}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"
-            />
+            <rect width="20" height="16" x="2" y="4" rx="3" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
           </svg>
         </div>
 
+        {/* Original Texting Restored */}
         <h1 className="font-serif text-3xl md:text-4xl text-navy font-normal mb-3">
           Verify your email address
         </h1>
 
-        <p className="text-gray-600 max-w-md text-base leading-relaxed mb-6">
+        <p className="text-gray-600 max-w-md text-base leading-relaxed mb-8">
           We&apos;ve sent a verification link to{" "}
           <strong className="text-gray-900 font-semibold">{email}</strong>.
           Please click the link in that email to activate your account.
         </p>
 
         {/* Resend Email Functionality */}
-        <div className="mt-2 flex flex-col items-center gap-3">
-          <p className="text-sm text-gray-500">
-            Didn&apos;t receive the email? Check your spam folder or{" "}
+        <div className="flex flex-col items-center gap-3 w-full max-w-xs mx-auto mb-4">
+          {cooldown > 0 ? (
+            <div className="w-full py-3 px-6 rounded-full bg-gray-100 border border-gray-200 text-gray-400 font-semibold text-[11px] tracking-wider uppercase select-none text-center cursor-not-allowed shadow-sm">
+              Resend link available in {cooldown}s
+            </div>
+          ) : (
             <button
               type="button"
               onClick={handleResend}
-              disabled={resendLoading || cooldown > 0}
-              className={`font-semibold underline transition-colors cursor-pointer ${
-                cooldown > 0 ? "text-gray-400 cursor-not-allowed" : config.accentBtn
+              disabled={resendLoading}
+              className={`w-full py-3 px-6 rounded-full font-semibold text-[11px] tracking-wider uppercase text-center cursor-pointer transition-all duration-300 border ${
+                portal === "professional"
+                  ? "bg-navy text-white hover:bg-navy-deep border-navy shadow-[0_4px_12px_rgba(27,58,92,0.15)] hover:scale-[1.02] active:scale-[0.98]"
+                  : "bg-red text-white hover:bg-red-dark border-red shadow-[0_4px_12px_rgba(127,29,29,0.15)] hover:scale-[1.02] active:scale-[0.98]"
               }`}
             >
-              {resendLoading
-                ? "Sending..."
-                : cooldown > 0
-                ? `Resend email (wait ${cooldown}s)`
-                : "Resend email"}
+              {resendLoading ? "Sending..." : "Resend verification email"}
             </button>
-          </p>
+          )}
+
           {resendSuccess && (
-            <p className="text-xs text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-1.5 flex items-center gap-1.5 animate-fade-in">
+            <p className="text-xs text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-1.5 flex items-center gap-1.5 mt-2 animate-fade-in font-medium">
               ✓ A new verification link has been sent!
             </p>
           )}
+
           {resendError && (
-            <p className="text-xs text-rose-600 bg-rose-50 border border-rose-100 rounded-lg px-3 py-1.5">
+            <p className="text-xs text-rose-600 bg-rose-50 border border-rose-100 rounded-lg px-3 py-1.5 mt-2 font-medium">
               {resendError}
             </p>
           )}
@@ -149,28 +142,28 @@ export default function EmailVerificationPending({ portal }) {
 
         {/* Mock/Development link */}
         {mockLink && (
-          <div className="mt-8 p-6 bg-white border border-gray-150 rounded-2xl shadow-sm text-left text-sm text-gray-700 max-w-md w-full">
+          <div className="mt-10 p-5 bg-white border border-gray-150 rounded-2xl shadow-sm text-left text-xs text-gray-600 max-w-sm w-full">
             <p className={`font-semibold mb-2 ${config.accentText}`}>Development mode (no backend)</p>
-            <p className="mb-3 text-xs text-gray-500">
-              No email is sent. Open this link to continue — the same URL your API would put in the email:
+            <p className="mb-3 text-[11px] text-gray-400 leading-normal">
+              No email is sent. Open this link to continue:
             </p>
             <Link to={mockTo} className={`${config.accentText} font-semibold break-all underline hover:opacity-85`}>
               {mockLink}
             </Link>
           </div>
         )}
+      </div>
 
-        <p className="flex items-center justify-center gap-2 text-sm text-gray-500 flex-wrap mt-8">
-          <span aria-hidden>✉</span>
-          Wrong email address?{" "}
-          <button
-            type="button"
-            onClick={() => navigate(config.changeEmailRoute)}
-            className={`${config.accentText} font-semibold hover:underline cursor-pointer`}
-          >
-            Change email →
-          </button>
-        </p>
+      {/* Clean change email link at the absolute bottom */}
+      <div className="text-xs text-gray-400 select-none mt-auto pt-12 pb-4">
+        Wrong email address?{" "}
+        <button
+          type="button"
+          onClick={() => navigate(config.changeEmailRoute)}
+          className={`${config.accentText} font-semibold underline hover:opacity-85 cursor-pointer`}
+        >
+          Change email
+        </button>
       </div>
     </div>
   );

@@ -450,14 +450,24 @@ export function FindWorkersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [myProfile, setMyProfile] = useState(null);
+  const [selectedWorker, setSelectedWorker] = useState(null);
+  const [selectedWorkerDetails, setSelectedWorkerDetails] = useState(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       try {
-        const { data } = await api.get("/dashboard/");
+        const [dashboardRes, profileRes] = await Promise.all([
+          api.get("/dashboard/"),
+          api.get("/profile/me/").catch(() => null),
+        ]);
         if (cancelled) return;
-        setWorkers(data?.professional_profiles || []);
+        setWorkers(dashboardRes.data?.professional_profiles || []);
+        if (profileRes?.data) {
+          setMyProfile(profileRes.data);
+        }
         setError("");
       } catch (err) {
         if (cancelled) return;
@@ -472,7 +482,30 @@ export function FindWorkersPage() {
     };
   }, []);
 
+  const handleViewProfile = async (worker) => {
+    setSelectedWorker(worker);
+    setSelectedWorkerDetails(null);
+    setDetailsLoading(true);
+    try {
+      if (worker.uidb64) {
+        const { data } = await api.get(`/profile/${worker.uidb64}/`);
+        setSelectedWorkerDetails(data);
+      } else {
+        setSelectedWorkerDetails(worker);
+      }
+    } catch (err) {
+      console.error("Error fetching profile details:", err);
+      setSelectedWorkerDetails(worker);
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
   const filtered = workers.filter((w) => {
+    // Exclude current user's profile from the list of workers
+    if (myProfile && (w.uidb64 === myProfile.uidb64 || w.id === myProfile.id)) {
+      return false;
+    }
     if (!search.trim()) return true;
     const q = search.toLowerCase();
     return (
@@ -484,7 +517,7 @@ export function FindWorkersPage() {
 
   return (
     <div>
-      <h1 className="font-serif text-3xl font-normal mb-1">Find Workers</h1>
+      <h1 className="font-serif text-3xl font-normal mb-1">Find Professionals</h1>
       <p className="text-sm text-gray-400 mb-6">Browse verified professionals across Algeria</p>
 
       <div className="flex gap-3 mb-6">
@@ -512,30 +545,190 @@ export function FindWorkersPage() {
               .slice(0, 2)
               .toUpperCase();
             return (
-              <div key={w.id} className="linkio-panel p-5 hover:shadow-md transition-all">
-                <div
-                  className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-semibold mb-3"
-                  style={{ background: AVATAR_COLORS[index % AVATAR_COLORS.length] }}
-                >
-                  {ini}
+              <div key={w.id} className="linkio-panel p-5 hover:shadow-md transition-all flex flex-col justify-between">
+                <div>
+                  <div
+                    className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-semibold mb-3 text-navy-deep"
+                    style={{ background: AVATAR_COLORS[index % AVATAR_COLORS.length] }}
+                  >
+                    {ini}
+                  </div>
+                  <p className="font-semibold text-sm mb-0.5">{w.full_name}</p>
+                  <p className="text-xs text-gray-400 mb-3">
+                    {w.professional_title} · {w.wilaya}
+                  </p>
+                  <span className="text-xs px-2.5 py-1 bg-red/5 text-red rounded-full inline-block mb-4 font-medium">
+                    {w.years_experience ?? 0} yrs experience
+                  </span>
                 </div>
-                <p className="font-semibold text-sm mb-0.5">{w.full_name}</p>
-                <p className="text-xs text-gray-400 mb-3">
-                  {w.professional_title} · {w.wilaya}
-                </p>
-                <span className="text-xs px-2.5 py-1 bg-red/5 text-red rounded-full inline-block mb-4">
-                  {w.years_experience ?? 0} yrs experience
-                </span>
                 <button
                   type="button"
-                  className="w-full py-2 border border-gray-200 rounded-xl text-sm text-red hover:bg-red/5 transition-all"
-                  disabled
+                  onClick={() => handleViewProfile(w)}
+                  className="w-full py-2 bg-[#0B1E36] hover:bg-[#061120] rounded-xl text-sm text-white font-medium active:scale-95 transition-all cursor-pointer mt-2"
                 >
-                  Contact (coming soon)
+                  View Profile
                 </button>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Premium Profile Modal */}
+      {selectedWorker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-deep/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[85vh] overflow-y-auto shadow-2xl relative animate-slide-up flex flex-col font-sans">
+            
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-[#0B1E36] p-6 text-white flex justify-between items-start z-10 rounded-t-3xl">
+              <div>
+                <span className="text-[10px] tracking-wider text-white/60 uppercase block mb-1">Professional Profile</span>
+                <h2 className="font-serif text-2xl font-normal">
+                  {selectedWorker.full_name}
+                </h2>
+                <p className="text-xs text-white/80 mt-1">
+                  {selectedWorker.professional_title} · {selectedWorker.wilaya}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedWorker(null);
+                  setSelectedWorkerDetails(null);
+                }}
+                className="text-white/60 hover:text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6 flex-1 text-left">
+              {detailsLoading ? (
+                <div className="py-12 text-center text-gray-500 text-sm">
+                  <div className="inline-block w-6 h-6 border-2 border-[#0B1E36] border-t-transparent rounded-full animate-spin mb-3" />
+                  <p>Loading full profile details...</p>
+                </div>
+              ) : (
+                (() => {
+                  const p = selectedWorkerDetails || selectedWorker;
+                  const initials = (p.full_name || "??")
+                    .split(" ")
+                    .map((part) => part[0])
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase();
+                  
+                  return (
+                    <div className="space-y-6">
+                      {/* Quick Overview */}
+                      <div className="flex items-center gap-4 border-b border-gray-150 pb-5">
+                        <div className="w-16 h-16 bg-[#4c0527]/10 rounded-full flex items-center justify-center text-[#4c0527] font-semibold text-lg flex-shrink-0">
+                          {initials}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900 text-lg">{p.full_name}</p>
+                          <p className="text-sm text-gray-500">{p.professional_title}</p>
+                          <span className="text-xs px-2.5 py-1 bg-green-50 text-green-700 border border-green-150 rounded-full inline-block mt-2 font-medium">
+                            {p.years_experience ?? 0} years experience
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Main Grid Details */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        {/* Info Block */}
+                        <div className="space-y-3">
+                          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Contact & Location</h4>
+                          <div className="space-y-2 text-sm text-gray-700">
+                            <p><span className="text-gray-400 font-medium">Email:</span> {p.email || "Contact to view"}</p>
+                            <p><span className="text-gray-400 font-medium">Phone:</span> {p.phone || "Contact to view"}</p>
+                            <p><span className="text-gray-400 font-medium">Wilaya:</span> {p.wilaya || "Not provided"}</p>
+                          </div>
+                        </div>
+
+                        {/* Skills Block */}
+                        <div className="space-y-3">
+                          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Skills</h4>
+                          {p.skills && p.skills.length > 0 ? (
+                            <div className="flex flex-wrap gap-1.5">
+                              {p.skills.map((s, idx) => (
+                                <span key={idx} className="text-xs px-2.5 py-1 bg-gray-100 text-gray-700 rounded-full font-medium">
+                                  {s.skill_name || s.name || s}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-gray-400">No skills listed yet.</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Bio / About */}
+                      <div className="space-y-2 border-t border-gray-150 pt-5">
+                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">About Me</h4>
+                        <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">
+                          {p.bio || "No biography provided yet."}
+                        </p>
+                      </div>
+
+                      {/* Work Experience */}
+                      {p.work_experiences && p.work_experiences.length > 0 && (
+                        <div className="space-y-3 border-t border-gray-150 pt-5">
+                          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Work Experience</h4>
+                          <div className="space-y-3">
+                            {p.work_experiences.map((exp, idx) => (
+                              <div key={idx} className="text-sm pb-2 border-b border-gray-50 last:border-0 last:pb-0">
+                                <p className="font-semibold text-gray-900">{exp.job_role}</p>
+                                <p className="text-xs text-gray-500 mt-0.5">{exp.company_name}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Education */}
+                      {p.educations && p.educations.length > 0 && (
+                        <div className="space-y-3 border-t border-gray-150 pt-5">
+                          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Education</h4>
+                          <div className="space-y-3">
+                            {p.educations.map((edu, idx) => (
+                              <div key={idx} className="text-sm pb-2 border-b border-gray-50 last:border-0 last:pb-0">
+                                <p className="font-semibold text-gray-900">{edu.degree} in {edu.field}</p>
+                                <p className="text-xs text-gray-500 mt-0.5">{edu.institution}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="sticky bottom-0 bg-gray-50 p-4 border-t border-gray-100 flex justify-end gap-3 rounded-b-3xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedWorker(null);
+                  setSelectedWorkerDetails(null);
+                }}
+                className="px-5 py-2 border border-gray-200 rounded-full text-xs font-semibold hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                className="px-5 py-2 bg-[#0B1E36] text-white rounded-full text-xs font-semibold hover:bg-[#061120] active:scale-95 transition-all cursor-pointer animate-pulse"
+                disabled
+              >
+                Contact (coming soon)
+              </button>
+            </div>
+
+          </div>
         </div>
       )}
     </div>

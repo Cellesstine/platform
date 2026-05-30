@@ -46,7 +46,11 @@ export async function postEnterpriseVerification(formData) {
 
 export async function updateProfile(payload, partial = true) {
   const method = partial ? "patch" : "put";
-  const { data } = await api[method]("/profile/edit/", payload);
+  let config = {};
+  if (payload instanceof FormData) {
+    config = { headers: { "Content-Type": "multipart/form-data" } };
+  }
+  const { data } = await api[method]("/profile/edit/", payload, config);
   return data;
 }
 

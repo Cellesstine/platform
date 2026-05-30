@@ -9,31 +9,14 @@ import { storeAuthFromResponse, parseApiError, getDashboardPath } from "../../se
 import { syncIndividualProfileId } from "../../services/applicationsApi";
 
 const leftContent = (
-  <div>
-    <p className="text-[11px] tracking-widest text-white/50 uppercase mb-2">Welcome back</p>
-    <h2 className="font-serif text-4xl font-normal text-white leading-snug mb-6">
-      Your network
-      <br />
-      is waiting
-      <br />
-      <em className="italic">for you.</em>
+  <div className="text-left flex flex-col items-start justify-center w-full max-w-sm mx-auto">
+    <p className="text-[10px] tracking-[0.2em] text-white/60 uppercase mb-2">WELCOME BACK</p>
+    <h2 className="font-serif text-3xl font-normal text-white leading-snug mb-6 italic">
+      Connect with your<br />professional sphere.
     </h2>
-    <p className="text-sm text-white/70 leading-relaxed mb-8">
-      Sign in to access your dashboard, track applications, manage job posts, and connect with talent across all 58
-      wilayas.
+    <p className="text-sm text-white/70 leading-relaxed font-light">
+      Access your dashboard, manage active engagements, and connect with your network.
     </p>
-    <div className="flex gap-3">
-      {[
-        { n: "58", l: "Wilayas covered" },
-        { n: "∞", l: "Job & freelance posts" },
-        { n: "1st", l: "Verified DZ network" },
-      ].map((s) => (
-        <div key={s.l} className="flex-1 bg-white/10 rounded-linkio p-3">
-          <p className="font-serif text-xl text-white">{s.n}</p>
-          <p className="text-[11px] text-white/50 mt-1">{s.l}</p>
-        </div>
-      ))}
-    </div>
   </div>
 );
 
@@ -113,7 +96,7 @@ export default function SignInPage() {
   };
 
   return (
-    <AuthLayout leftContent={leftContent}>
+    <AuthLayout leftContent={leftContent} leftBg="bg-gradient-to-br from-[#4c0527] to-[#2d0217]">
       <PageTitle title="Good to have you back." subtitle="Enter your credentials to continue." />
 
       {reactivated || successMessage ? (
@@ -136,10 +119,9 @@ export default function SignInPage() {
         type="password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        className={`${inputClass} mb-1`}
+        className={`${inputClass} mb-4`}
         placeholder="Your password"
       />
-      <p className="text-xs text-gray-500 mb-3">At least 8 characters</p>
 
       <div className="flex justify-between items-center mb-5">
         <label className="flex items-center gap-2 text-sm text-gray-500 cursor-pointer">
@@ -147,7 +129,7 @@ export default function SignInPage() {
         </label>
         <button
           type="button"
-          className={`text-sm ${theme.textAccent} underline`}
+          className={`text-sm ${theme.textAccent}`}
           onClick={() => navigate("/forgot-password")}
         >
           Forgot password?
@@ -179,7 +161,7 @@ export default function SignInPage() {
 
       <p className="text-sm text-gray-500 text-center mt-4">
         Don&apos;t have an account?{" "}
-        <Link to="/" className={`${theme.textAccent} underline`}>
+        <Link to="/" className={theme.textAccent}>
           Create one
         </Link>
       </p>

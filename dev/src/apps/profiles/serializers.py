@@ -45,6 +45,7 @@ class IndividualProfileSerializer(serializers.ModelSerializer):
 		return value.strip().title()
 
 	def validate_phone(self, value):
+		value = value.lstrip("+213 ")
 		if not(value.isdigit()):
 			raise serializers.ValidationError("Phone number can only contain digits")
 		return value
@@ -220,12 +221,13 @@ class SocialLinksDetailsSerializer(serializers.ModelSerializer):
 		fields = ["platform", "url"]
 
 class UserSkillDetailsSerializer(serializers.ModelSerializer):
+	skill_id = serializers.IntegerField(source="skill.id", read_only=True)
 	skill_name = serializers.CharField(source="skill.name", read_only=True)
 	category = serializers.CharField(source="skill.get_category_display", read_only=True)
 
 	class Meta:
 		model = UserSkill
-		fields = ["skill_name", "category","level"]
+		fields = ["skill_id", "skill_name", "category","level"]
 
 class IndividualProfileDetailsSerializer(serializers.ModelSerializer):
 	email = serializers.EmailField(source='user.email', read_only=True)
@@ -339,7 +341,7 @@ class IndividualProfileEditSerializer(serializers.ModelSerializer):
 			setattr(instance, key, value)
 		instance.save()
 
-		if skills:
+		if skills is not None:
 			with transaction.atomic():
 				UserSkill.objects.filter(individual=instance).delete()
 				obj = []
@@ -348,7 +350,7 @@ class IndividualProfileEditSerializer(serializers.ModelSerializer):
 
 				UserSkill.objects.bulk_create(obj)
 
-		if educations:
+		if educations is not None:
 			with transaction.atomic():
 				Education.objects.filter(individual=instance).delete()
 				obj = []
@@ -357,7 +359,7 @@ class IndividualProfileEditSerializer(serializers.ModelSerializer):
 
 				Education.objects.bulk_create(obj)
 
-		if work_experiences:
+		if work_experiences is not None:
 			with transaction.atomic():
 				WorkExperience.objects.filter(individual=instance).delete()
 				obj = []
@@ -366,12 +368,12 @@ class IndividualProfileEditSerializer(serializers.ModelSerializer):
 
 				WorkExperience.objects.bulk_create(obj)
 
-		if portfolio_urls:
+		if portfolio_urls is not None:
 			with transaction.atomic():
 				Portfolio.objects.filter(individual=instance).delete()
 				obj = []
 				for portfolio_url in portfolio_urls:
-					obj.append(Portfolio(individual=instance, **portfolio_url))
+					obj.append(Portfolio(individual=instance, url=portfolio_url))
 
 				Portfolio.objects.bulk_create(obj)
 

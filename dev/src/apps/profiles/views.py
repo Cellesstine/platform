@@ -12,6 +12,8 @@ from apps.accounts.models import (
     Profile
 )
 
+from .models import IndividualProfile, EnterpriseProfile
+
 from .serializers import (
     IndividualProfileSerializer,
     IndividualProfilePostSetupSerializer,
@@ -98,7 +100,7 @@ def profileEdit(request):
             return Response({"error": "Enterprise profile not found."}, status=status.HTTP_404_NOT_FOUND)
         
         instance = profile.enterpriseprofile
-        serializer = EnterpriseProfileEditSerializer(instance, data=request.data, partial=is_partial)
+        serializer = EnterpriseProfileEditSerializer(instance, data=request.data, partial=partial_edit)
  
     if serializer.is_valid():
         serializer.save()
@@ -127,14 +129,28 @@ def profileDetails(request, uidb64):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        serializer = IndividualProfileDetailsSerializer(profile.individualprofile)
+        # Optimize database query using select_related and prefetch_related
+        individual_profile = IndividualProfile.objects.select_related('user').prefetch_related(
+            'educations',
+            'work_experiences',
+            'social_links',
+            'portfolio_items',
+            'skills__skill'
+        ).get(id=profile.individualprofile.id)
+
+        serializer = IndividualProfileDetailsSerializer(individual_profile)
     else:
         if not hasattr(profile, 'enterpriseprofile'):
             return Response(
                 {'error': 'Profile not found.'},
                 status=status.HTTP_404_NOT_FOUND,)
 
-        serializer = EnterpriseProfileDetailsSerializer(profile.enterpriseprofile)
+        # Optimize database query using select_related and prefetch_related
+        enterprise_profile = EnterpriseProfile.objects.select_related('user').prefetch_related(
+            'social_links'
+        ).get(id=profile.enterpriseprofile.id)
+
+        serializer = EnterpriseProfileDetailsSerializer(enterprise_profile)
 
     return Response(
         {**serializer.data, "is_owner": is_owner},
@@ -158,14 +174,30 @@ def myProfileDetails(request):
                 {'error': 'Profile not found.'},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        serializer = IndividualProfileDetailsSerializer(profile.individualprofile)
+        
+        # Optimize database query using select_related and prefetch_related
+        individual_profile = IndividualProfile.objects.select_related('user').prefetch_related(
+            'educations',
+            'work_experiences',
+            'social_links',
+            'portfolio_items',
+            'skills__skill'
+        ).get(id=profile.individualprofile.id)
+
+        serializer = IndividualProfileDetailsSerializer(individual_profile)
     else:
         if not hasattr(profile, 'enterpriseprofile'):
             return Response(
                 {'error': 'Profile not found.'},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        serializer = EnterpriseProfileDetailsSerializer(profile.enterpriseprofile)
+        
+        # Optimize database query using select_related and prefetch_related
+        enterprise_profile = EnterpriseProfile.objects.select_related('user').prefetch_related(
+            'social_links'
+        ).get(id=profile.enterpriseprofile.id)
+
+        serializer = EnterpriseProfileDetailsSerializer(enterprise_profile)
 
     return Response(
         {**serializer.data, "is_owner": True},
@@ -177,7 +209,7 @@ from .models import Skill
 from django.utils.text import slugify
 
 @api_view(["GET", "POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def searchOrCreateSkills(request):
     if request.method == "GET":
         q = request.GET.get("q", "")
@@ -189,6 +221,8 @@ def searchOrCreateSkills(request):
         return Response(data, status=status.HTTP_200_OK)
 
     elif request.method == "POST":
+        if not request.user or not request.user.is_authenticated:
+            return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
         name = request.data.get("name", "").strip()
         category = request.data.get("category", "OTHER").upper()
         if not name:

@@ -41,11 +41,11 @@ export default function ForgotPasswordPage() {
 
   return (
     <PasswordResetShell topbar={<PasswordResetTopbar />}>
-      <div className="w-14 h-14 bg-pro-blue/40 rounded-2xl flex items-center justify-center mb-6">
+      <div className="w-14 h-14 bg-[#4c0527]/10 rounded-2xl flex items-center justify-center mb-6">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
-          <rect x="5" y="11" width="14" height="10" rx="2" stroke="#8b1a1a" strokeWidth="1.5" />
-          <path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="#8b1a1a" strokeWidth="1.5" strokeLinecap="round" />
-          <circle cx="12" cy="15" r="1.5" fill="#8b1a1a" />
+          <rect x="5" y="11" width="14" height="10" rx="2" stroke="#4c0527" strokeWidth="1.5" />
+          <path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="#4c0527" strokeWidth="1.5" strokeLinecap="round" />
+          <circle cx="12" cy="15" r="1.5" fill="#4c0527" />
         </svg>
       </div>
 
@@ -83,7 +83,7 @@ export default function ForgotPasswordPage() {
         )}
 
         <GradientButton type="submit" disabled={!canSubmit || loading}>
-          {loading ? "Sending…" : "Send Reset Link →"}
+          {loading ? "Sending…" : "Send Reset Link"}
         </GradientButton>
 
         <p className="text-sm text-gray-500 text-center mt-5">

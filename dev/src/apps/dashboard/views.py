@@ -26,8 +26,12 @@ class DashboardAnnouncementSerializer(serializers.ModelSerializer):
         ]
 
 
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+
 class DashboardProfessionalSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(read_only=True)
+    uidb64 = serializers.SerializerMethodField()
 
     class Meta:
         model = IndividualProfile
@@ -38,11 +42,16 @@ class DashboardProfessionalSerializer(serializers.ModelSerializer):
             "wilaya",
             "years_experience",
             "created_at",
+            "uidb64",
         ]
+
+    def get_uidb64(self, obj):
+        return urlsafe_base64_encode(force_bytes(obj.user.pk))
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def dashboardView(request):
+    print(f"[DEBUG DASHBOARD] Method: {request.method}, Path: {request.path}, User: {request.user}, Auth: {request.META.get('HTTP_AUTHORIZATION')}")
     if not hasattr(request.user, "profile"):
         return Response({"error": "Profile not found."}, status=status.HTTP_404_NOT_FOUND)
 
@@ -76,11 +85,13 @@ def dashboardView(request):
             .filter(status="ACTIVE")
             .order_by("-created_at")[:8]
         )
+        professionals = IndividualProfile.objects.order_by("-created_at")[:20]
 
         return Response(
             {
                 "dashboard_type": "individual",
                 "recent_announcements": DashboardAnnouncementSerializer(recent_announcements, many=True).data,
+                "professional_profiles": DashboardProfessionalSerializer(professionals, many=True).data,
             },
             status=status.HTTP_200_OK,
         )

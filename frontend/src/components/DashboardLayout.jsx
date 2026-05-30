@@ -6,7 +6,7 @@ import { clearAuth } from "../services/auth";
 const menuItems = [
   { to: "/dashboard", label: "Dashboard", icon: "⊞", end: true },
   { to: "/dashboard/announcements", label: "Announcements", icon: "≡" },
-  { to: "/dashboard/find-workers", label: "Find Workers", icon: "⌖" },
+  { to: "/dashboard/find-workers", label: "Find Professionals", icon: "⌖" },
   { to: "/dashboard/company-profile", label: "Company Profile", icon: "⊙" },
 ];
 

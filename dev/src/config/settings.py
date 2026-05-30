@@ -100,8 +100,8 @@ ROOT_URLCONF = 'config.urls'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'AUTH_HEADER_TYPES': ('Bearer',),
@@ -144,6 +144,7 @@ DATABASES = {
         'PASSWORD': 'AVNS_mXhZuoDUFVuWU2WFHyQ',
         'HOST': 'db-django-cellesstinee.e.aivencloud.com',
         'PORT': '12384',
+        'CONN_MAX_AGE': 600,
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             'ssl': {

@@ -104,14 +104,14 @@ export default function ProfessionalAnnouncementsPage() {
               <span className="text-sm text-gray-500">{job.enterprise_name}</span>
             </div>
 
-            <h2 className="font-semibold text-lg text-gray-900 mb-2">{job.role}</h2>
+            <h2 className="font-semibold text-lg text-gray-900 mb-2">{job.role_display || job.role}</h2>
             <p className="text-sm text-gray-500 mb-4">
-              {job.wilaya} · {job.job_type} · {job.industry}
+              {job.wilaya_display || job.wilaya} · {job.job_type_display || job.job_type} · {job.industry_display || job.industry}
             </p>
 
             <div className="flex flex-wrap gap-2 mb-5">
               <Tag variant="new">{job.status}</Tag>
-              <Tag variant="remote">{job.job_type}</Tag>
+              <Tag variant="remote">{job.job_type_display || job.job_type}</Tag>
             </div>
 
             <div className="flex items-center justify-between pt-4 border-t border-gray-100">

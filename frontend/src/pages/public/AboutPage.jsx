@@ -1,10 +1,6 @@
-import Navbar from "../../components/Navbar";
-
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-cream">
-      <Navbar />
-
       {/* Hero */}
       <div className="px-28 pt-20 pb-16 max-w-3xl">
         <p className="linkio-eyebrow mb-4">About Linkio</p>

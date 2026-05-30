@@ -1,9 +1,9 @@
 from django.shortcuts import get_object_or_404
-from django.db.models import Q
+from django.db.models import Q, Count
 
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import api_view
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
 from .models import Announcement, Application
@@ -18,12 +18,14 @@ from .serializers import (
 )
 
 @api_view(["GET", "POST"])
+@permission_classes([AllowAny])
 def announcement_list_create(request):
     if request.method == "GET":
         qs = (
             Announcement.objects
             .select_related("enterprise")
             .prefetch_related("required_skills")
+            .annotate(applicant_count=Count("applications"))
         )
 
         st         = request.query_params.get("status", "ACTIVE").upper()
@@ -50,8 +52,10 @@ def announcement_list_create(request):
             qs = qs.filter(
                 Q(description__icontains=search)           |
                 Q(address__icontains=search)               |
-                Q(enterprise__company_name__icontains=search)
-            )
+                Q(role__icontains=search)                  |
+                Q(enterprise__company_name__icontains=search) |
+                Q(required_skills__name__icontains=search)
+            ).distinct()
 
         serializer = AnnouncementListSerializer(qs, many=True)
         return Response(serializer.data)
@@ -73,11 +77,13 @@ def announcement_list_create(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(["GET"])
+@permission_classes([AllowAny])
 def announcement_search(request):
     qs = (
         Announcement.objects
         .select_related("enterprise")
         .prefetch_related("required_skills")
+        .annotate(applicant_count=Count("applications"))
     )
 
     q        = request.query_params.get("q")
@@ -121,6 +127,7 @@ def announcement_search(request):
     })
 
 @api_view(["GET", "PUT", "PATCH", "DELETE"])
+@permission_classes([AllowAny])
 def announcement_detail(request, pk):
     announcement = get_object_or_404(
         Announcement.objects
@@ -131,6 +138,14 @@ def announcement_detail(request, pk):
 
     if request.method == "GET":
         return Response(AnnouncementDetailSerializer(announcement).data)
+
+    # Protect write operations
+    if not request.user.is_authenticated:
+        return Response({"error": "Authentication required."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    # Check if the user has an enterprise profile and owns the announcement
+    if not hasattr(request.user, "profile") or not hasattr(request.user.profile, "enterpriseprofile") or request.user.profile.enterpriseprofile != announcement.enterprise:
+        return Response({"error": "You do not have permission to modify this announcement."}, status=status.HTTP_403_FORBIDDEN)
 
     if request.method == "DELETE":
         announcement.delete()
@@ -179,10 +194,11 @@ def announcement_close(request, pk):
 
 @api_view(["GET", "POST"])
 def application_list_create(request):
+    print(f"[DEBUG JOBS APPLICATION] Method: {request.method}, Path: {request.path}, User: {request.user}, Auth: {request.META.get('HTTP_AUTHORIZATION')}")
     if request.method == "GET":
         qs = (
             Application.objects
-            .select_related("announcement", "announcement__enterprise", "applicant")
+            .select_related("announcement", "announcement__enterprise", "applicant", "applicant__user")
         )
 
         announcement_id = request.query_params.get("announcement")
@@ -216,6 +232,7 @@ def application_search(request):
             "announcement",
             "announcement__enterprise",
             "applicant",
+            "applicant__user",
         )
     )
 
