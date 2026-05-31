@@ -1,4 +1,6 @@
 from django.db import transaction
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
 from rest_framework import serializers
 
 from .utils import (
@@ -45,8 +47,7 @@ class IndividualProfileSerializer(serializers.ModelSerializer):
 		return value.strip().title()
 
 	def validate_phone(self, value):
-		value = value.lstrip("+213 ")
-		if not(value.isdigit()):
+		if not(value.lstrip("+213 ").isdigit()):
 			raise serializers.ValidationError("Phone number can only contain digits")
 		return value
 
@@ -167,7 +168,7 @@ class IndividualProfilePostSetupSerializer(serializers.Serializer):
 class EntrepriseProfileSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = EnterpriseProfile
-		fields = ["company_name", "wilaya", "address", "industry", "company_size"]
+		fields = ["avatar", "company_name", "wilaya", "address", "industry", "company_size", "phone"]
 
 	def validate_company_name(self, value):
 		if not(value.strip()):
@@ -237,9 +238,11 @@ class IndividualProfileDetailsSerializer(serializers.ModelSerializer):
 	portfolios = PortfolioDetailsSerializer(source="portfolio_items", many=True, read_only=True)
 	skills = UserSkillDetailsSerializer(many=True, read_only=True)
 
+	full_name = serializers.CharField(read_only=True)
+
 	class Meta:
 		model = IndividualProfile
-		fields = ["id", "email", "avatar","first_name", "last_name", "phone", "wilaya", "address", "bio",
+		fields = ["id", "email", "avatar","first_name", "last_name", "full_name", "phone", "wilaya", "address", "bio",
 		"professional_title", "years_experience", "availability", "resume_file", "skills", "educations",
 		"work_experiences", "portfolios", "social_links", "created_at"]
 
@@ -254,6 +257,25 @@ class EnterpriseProfileDetailsSerializer(serializers.ModelSerializer):
             'wilaya', 'address', 'industry', 'company_size',
             'website', 'verified', 'social_links', 'created_at'
        	]
+
+class ProfessionalListSerializer(serializers.ModelSerializer):
+	full_name = serializers.CharField(read_only=True)
+	uidb64 = serializers.SerializerMethodField()
+
+	class Meta:
+		model = IndividualProfile
+		fields = [
+			"id",
+			"full_name",
+			"professional_title",
+			"wilaya",
+			"years_experience",
+			"created_at",
+			"uidb64",
+		]
+
+	def get_uidb64(self, obj):
+		return urlsafe_base64_encode(force_bytes(obj.user.pk))
 
 class EducationInputSerializer(serializers.Serializer):
 	institution = serializers.CharField(max_length=200)
@@ -326,7 +348,7 @@ class IndividualProfileEditSerializer(serializers.ModelSerializer):
 		return value.strip().title()
 
 	def validate_phone(self, value):
-		if not(value.isdigit()):
+		if not(value.lstrip("+213 ").replace(" ", "").isdigit()):
 			raise serializers.ValidationError("Phone number can only contain digits")
 		return value
 
@@ -398,7 +420,7 @@ class EnterpriseProfileEditSerializer(serializers.ModelSerializer):
 		return value.strip().title()
 
 	def validate_phone(self, value):
-		if value and not value.isdigit():
+		if value and not(value.lstrip("+213 ").replace(" ", "").isdigit()):
 			raise serializers.ValidationError("Phone number can only contain digits.")
 		return value
 

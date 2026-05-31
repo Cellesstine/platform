@@ -19,10 +19,19 @@ export async function setupIndividualProfile(payload) {
 }
 
 export async function setupEnterpriseProfile(payload) {
-  const { data } = await api.post("/profile/", {
-    role: "enterprise",
-    ...payload,
-  });
+  let body = payload;
+  let config = {};
+  if (payload instanceof FormData) {
+    payload.append("role", "enterprise");
+    body = payload;
+    config = { headers: { "Content-Type": "multipart/form-data" } };
+  } else {
+    body = {
+      role: "enterprise",
+      ...payload,
+    };
+  }
+  const { data } = await api.post("/profile/", body, config);
   return data;
 }
 

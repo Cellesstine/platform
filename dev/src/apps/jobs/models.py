@@ -75,7 +75,13 @@ class Announcement(TimeStampedModel):
 
     @property
     def applicant_count(self):
+        if hasattr(self, "_applicant_count"):
+            return self._applicant_count
         return self.applications.count()
+
+    @applicant_count.setter
+    def applicant_count(self, value):
+        self._applicant_count = value
 
 class Application(TimeStampedModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

@@ -116,7 +116,7 @@ class WorkExperience(TimeStampedModel):
         db_table = 'profiles_work_experience'
 
     def __str__(self):
-        return f"{self.role} at {self.company_name}"
+        return f"{self.job_role} at {self.company_name}"
 
 class Education(TimeStampedModel):
     individual  = models.ForeignKey(

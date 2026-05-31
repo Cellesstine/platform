@@ -64,6 +64,11 @@ def announcement_list_create(request):
         return Response({"error": "Authentication required."}, status=status.HTTP_401_UNAUTHORIZED)
     if not hasattr(request.user, "profile") or not hasattr(request.user.profile, "enterpriseprofile"):
         return Response({"error": "Enterprise profile required."}, status=status.HTTP_403_FORBIDDEN)
+    if not request.user.profile.enterpriseprofile.verified:
+        return Response(
+            {"error": "Account pending verification. You cannot post announcements until approved by admin."},
+            status=status.HTTP_403_FORBIDDEN
+        )
 
     payload = request.data.copy()
     payload["enterprise"] = str(request.user.profile.enterpriseprofile.id)
@@ -162,6 +167,16 @@ def announcement_detail(request, pk):
 
 @api_view(["POST"])
 def announcement_publish(request, pk):
+    if not request.user.is_authenticated:
+        return Response({"error": "Authentication required."}, status=status.HTTP_401_UNAUTHORIZED)
+    if not hasattr(request.user, "profile") or not hasattr(request.user.profile, "enterpriseprofile"):
+        return Response({"error": "Enterprise profile required."}, status=status.HTTP_403_FORBIDDEN)
+    if not request.user.profile.enterpriseprofile.verified:
+        return Response(
+            {"error": "Account pending verification. You cannot post announcements until approved by admin."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
     announcement = get_object_or_404(Announcement, pk=pk)
 
     if announcement.is_active():

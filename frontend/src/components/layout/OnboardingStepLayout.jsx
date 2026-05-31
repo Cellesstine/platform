@@ -36,7 +36,7 @@ export default function OnboardingStepLayout({
         <Stepper steps={steps} current={current} variant={theme.stepperVariant} />
 
         <div
-          className={`linkio-panel w-full ${maxWidth} p-8 md:p-10 mt-6`}
+          className={`bg-white rounded-[2.5rem] border border-gray-100 shadow-[0_20px_50px_rgba(27,58,92,0.06)] hover:shadow-[0_24px_60px_rgba(27,58,92,0.12)] hover:-translate-y-1 transform transition-all duration-300 w-full ${maxWidth} p-8 md:p-10 mt-8`}
         >
           {children}
         </div>

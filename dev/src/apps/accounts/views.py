@@ -121,10 +121,16 @@ def verifyEmailView(request, uidb64, token):
         user.save(update_fields=['is_active'])
  
         refresh = RefreshToken.for_user(user)
+        user_role = None
+        if hasattr(user, 'profile'):
+            user_role = user.profile.role.lower()
+
         return Response({
             'detail': 'Email verified successfully.',
             'access': str(refresh.access_token),
             'refresh': str(refresh),
+            'email': user.email,
+            'role': user_role,
         }, status=status.HTTP_200_OK)
  
     return Response(

@@ -80,9 +80,14 @@ export default function ProfessionalDashboardLayout() {
   }, []);
 
   const handleLogout = async () => {
-    await apiLogout();
-    clearAuth();
-    navigate("/sign-in", { replace: true });
+    try {
+      await apiLogout();
+    } catch (e) {
+      console.error("Logout API call failed:", e);
+    } finally {
+      clearAuth();
+      navigate("/sign-in", { replace: true });
+    }
   };
 
   const navItem = (item) => (

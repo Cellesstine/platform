@@ -32,8 +32,27 @@ export default function EmailVerifyCallbackPage({ portal, nextPath }) {
         if (data?.access) {
           storeAuthFromResponse(data, email);
         }
+
+        // Dynamically resolve target onboarding setup path based on actual database role
+        let targetPath = nextPath;
+        if (data?.role) {
+          const r = String(data.role).toLowerCase();
+          if (r === "individual" || r === "professional") {
+            targetPath = "/professional/onboarding/profile";
+          } else if (r === "enterprise" || r === "business") {
+            targetPath = "/onboarding/company";
+          }
+        } else {
+          // Fallback to checking the portal/link type if role field is not available in mock/development mode
+          if (portal === "professional") {
+            targetPath = "/professional/onboarding/profile";
+          } else {
+            targetPath = "/onboarding/company";
+          }
+        }
+
         if (!cancelled) {
-          navigate(nextPath, { replace: true, state: { email } });
+          navigate(targetPath, { replace: true, state: { email } });
         }
       } catch (err) {
         if (!cancelled) {

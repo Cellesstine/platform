@@ -79,7 +79,7 @@ export default function SettingsPage() {
   return (
     <div className="max-w-6xl mx-auto">
       <div className="mb-8">
-        <h1 className="font-serif text-4xl text-navy font-normal mb-2">Account Settings</h1>
+        <h1 className="font-serif text-4xl text-red font-normal mb-2">Account Settings</h1>
         <p className="text-sm text-gray-500">Update your security settings and preferences.</p>
       </div>
 
@@ -94,8 +94,8 @@ export default function SettingsPage() {
         {/* User Card Sidebar */}
         <div className="w-full lg:w-72 flex-shrink-0 flex flex-col gap-6">
           <div className="bg-white rounded-3xl p-6 border border-gray-150/50 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center text-center">
-            {/* Initials Avatar with Navy Glow */}
-            <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-[#0b1e36] to-[#1d3d63] text-white flex items-center justify-center text-2xl font-serif font-bold shadow-md relative overflow-hidden mb-4">
+            {/* Initials Avatar with Cherry Red Glow */}
+            <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-[#3C0713] to-[#7f1d1d] text-white flex items-center justify-center text-2xl font-serif font-bold shadow-md relative overflow-hidden mb-4">
               <div className="absolute inset-0 bg-white/5 opacity-50 blur-[1px]" />
               <span className="relative z-10">{initials}</span>
             </div>
@@ -113,8 +113,8 @@ export default function SettingsPage() {
               onClick={() => setSection("security")}
               className={`w-full text-left px-4 py-3 rounded-2xl text-sm transition-all flex items-center gap-3 font-medium ${
                 section === "security"
-                  ? "bg-[#0B1E36] text-white shadow-md"
-                  : "text-gray-600 hover:bg-slate-50 hover:text-[#0B1E36]"
+                  ? "bg-[#3C0713] text-white shadow-md"
+                  : "text-gray-600 hover:bg-slate-50 hover:text-[#3C0713]"
               }`}
             >
               {/* Lock SVG */}
@@ -130,8 +130,8 @@ export default function SettingsPage() {
               onClick={() => setSection("preferences")}
               className={`w-full text-left px-4 py-3 rounded-2xl text-sm transition-all flex items-center gap-3 font-medium ${
                 section === "preferences"
-                  ? "bg-[#0B1E36] text-white shadow-md"
-                  : "text-gray-600 hover:bg-slate-50 hover:text-[#0B1E36]"
+                  ? "bg-[#3C0713] text-white shadow-md"
+                  : "text-gray-600 hover:bg-slate-50 hover:text-[#3C0713]"
               }`}
             >
               {/* Sliders/Cog SVG */}
@@ -164,7 +164,7 @@ export default function SettingsPage() {
                 {/* Password Item */}
                 <div className="bg-slate-50/50 border border-gray-100 rounded-2xl p-5 hover:bg-slate-50/80 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <div className="w-10 h-10 rounded-xl bg-red/10 text-red flex items-center justify-center flex-shrink-0 mt-0.5">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
                       </svg>
@@ -276,7 +276,7 @@ export default function SettingsPage() {
 
               <div className="max-w-xs">
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">Display Language</label>
-                <select className="w-full px-4 py-3 rounded-2xl bg-gray-50 text-sm outline-none border border-gray-200 focus:border-[#0B1E36] transition-colors cursor-pointer">
+                <select className="w-full px-4 py-3 rounded-2xl bg-gray-50 text-sm outline-none border border-gray-200 focus:border-[#3C0713] transition-colors cursor-pointer">
                   <option>English</option>
                   <option>Français</option>
                   <option>العربية</option>
@@ -387,7 +387,7 @@ export default function SettingsPage() {
             value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
             placeholder="e.g. candidate@newemail.com"
-            className="w-full px-4 py-3 rounded-2xl bg-gray-50 text-sm mb-4 outline-none border border-gray-200 focus:border-[#0B1E36] transition-colors"
+            className="w-full px-4 py-3 rounded-2xl bg-gray-50 text-sm mb-4 outline-none border border-gray-200 focus:border-[#3C0713] transition-colors"
           />
 
           <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">Current Password</label>
@@ -396,7 +396,7 @@ export default function SettingsPage() {
             value={emailChangePassword}
             onChange={(e) => setEmailChangePassword(e.target.value)}
             placeholder="Confirm with password"
-            className="w-full px-4 py-3 rounded-2xl bg-gray-50 text-sm mb-4 outline-none border border-gray-200 focus:border-[#0B1E36] transition-colors"
+            className="w-full px-4 py-3 rounded-2xl bg-gray-50 text-sm mb-4 outline-none border border-gray-200 focus:border-[#3C0713] transition-colors"
           />
 
           {accountError && <p className="text-xs text-red-600 mb-4 font-medium">{accountError}</p>}
@@ -413,7 +413,7 @@ export default function SettingsPage() {
               type="button"
               disabled={!newEmail.trim() || accountLoading}
               onClick={handleChangeEmail}
-              className="flex-1 py-3 bg-[#0B1E36] hover:bg-[#132c4d] text-white rounded-2xl text-xs font-semibold transition-colors disabled:opacity-50"
+              className="flex-1 py-3 bg-[#3C0713] hover:bg-[#5c0b1e] text-white rounded-2xl text-xs font-semibold transition-colors disabled:opacity-50"
             >
               {accountLoading ? "Sending…" : "Send verification"}
             </button>

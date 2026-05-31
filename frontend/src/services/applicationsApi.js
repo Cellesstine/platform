@@ -70,3 +70,18 @@ export async function createApplication({ announcementId, coverLetter, resumeFil
   }
   return data;
 }
+
+export async function reviewApplication(id) {
+  const { data } = await api.post(`/jobs/applications/${id}/reviewed/`);
+  return data;
+}
+
+export async function acceptApplication(id) {
+  const { data } = await api.post(`/jobs/applications/${id}/accept/`);
+  return data;
+}
+
+export async function rejectApplication(id) {
+  const { data } = await api.post(`/jobs/applications/${id}/reject/`);
+  return data;
+}

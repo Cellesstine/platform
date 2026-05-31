@@ -35,7 +35,7 @@ export default function EmailVerificationPending({ portal }) {
   const [resendLoading, setResendLoading] = useState(false);
   const [resendError, setResendError] = useState("");
   const [resendSuccess, setResendSuccess] = useState(false);
-  const [cooldown, setCooldown] = useState(60); // Starts with 60 seconds cooldown on mount
+  const [cooldown, setCooldown] = useState(0); // Starts with 0 seconds cooldown on mount so users can trigger it immediately
 
   const mockTo = isMockApiEnabled() ? getMockVerifyEmailTo(portal) : null;
   const mockLink = mockTo ? `${window.location.origin}${mockTo}` : null;

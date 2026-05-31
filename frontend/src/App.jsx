@@ -46,7 +46,9 @@ import DashboardLayout from "./components/DashboardLayout";
 import DashboardHome from "./pages/dashboard/DashboardHome";
 import AnnouncementsPage from "./pages/dashboard/AnnouncementsPage";
 import NewAnnouncementPage from "./pages/dashboard/NewAnnouncementPage";
+import ApplicantsPage from "./pages/dashboard/ApplicantsPage";
 import FindWorkersPage from "./pages/dashboard/FindWorkersPage";
+import CompanyProfilePage from "./pages/dashboard/CompanyProfilePage";
 import CompanyProfileEditPage from "./pages/dashboard/CompanyProfileEditPage";
 import SettingsPage from "./pages/dashboard/SettingsPage";
 
@@ -122,13 +124,27 @@ export default function App() {
         <Route path="/account/email/verify/:uidb64/:token" element={<EmailChangeVerifyPage />} />
 
         {/* Business onboarding */}
-        <Route path="/onboarding/account" element={<OnboardingAccount />} />
+        <Route
+          path="/onboarding/account"
+          element={
+            <GuestRoute>
+              <OnboardingAccount />
+            </GuestRoute>
+          }
+        />
         <Route path="/onboarding/company" element={<OnboardingCompany />} />
         <Route path="/onboarding/documents" element={<OnboardingDocuments />} />
         <Route path="/onboarding/pending" element={<PendingVerificationPage />} />
 
         {/* Professional onboarding */}
-        <Route path="/professional/onboarding/account" element={<ProfessionalAccountPage />} />
+        <Route
+          path="/professional/onboarding/account"
+          element={
+            <GuestRoute>
+              <ProfessionalAccountPage />
+            </GuestRoute>
+          }
+        />
         <Route path="/professional/onboarding/verify-email" element={<ProfessionalVerifyEmailPage />} />
         <Route
           path="/professional/onboarding/verify-email/confirm"
@@ -164,8 +180,10 @@ export default function App() {
           <Route index element={<DashboardHome />} />
           <Route path="announcements" element={<AnnouncementsPage />} />
           <Route path="announcements/new" element={<NewAnnouncementPage />} />
+          <Route path="applicants" element={<ApplicantsPage />} />
           <Route path="find-workers" element={<FindWorkersPage />} />
-          <Route path="company-profile" element={<CompanyProfileEditPage />} />
+          <Route path="company-profile" element={<CompanyProfilePage />} />
+          <Route path="company-profile/edit" element={<CompanyProfileEditPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
 

@@ -391,10 +391,9 @@ export function ProfessionalProfileSetupPage() {
               </div>
             </>
           ) : (
-            <div className="flex flex-col items-center text-gray-400 group-hover:text-navy transition-colors duration-300">
-              <span className="text-3xl mb-1 group-hover:scale-110 transition-transform duration-300">👤</span>
-              <span className="text-[10px] uppercase tracking-wider font-semibold">Upload Photo</span>
-            </div>
+            <span className="text-gray-400 group-hover:text-navy transition-colors duration-300 font-sans text-sm font-semibold tracking-wider">
+              Photo
+            </span>
           )}
         </div>
         <input

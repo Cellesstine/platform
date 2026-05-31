@@ -15,54 +15,47 @@ function delay(ms) {
 
 export function saveEmailVerificationSession(portal, email) {
   const expiresAt = Date.now() + EMAIL_VERIFY_TTL_SECONDS * 1000;
-  sessionStorage.setItem(storageKey(portal), email);
-  sessionStorage.setItem(expiresKey(portal), String(expiresAt));
+  localStorage.setItem(storageKey(portal), email);
+  localStorage.setItem(expiresKey(portal), String(expiresAt));
   return expiresAt;
 }
 
 export function getEmailVerificationSession(portal) {
-  const email = sessionStorage.getItem(storageKey(portal));
-  const expiresAt = Number(sessionStorage.getItem(expiresKey(portal)) || 0);
+  const email = localStorage.getItem(storageKey(portal));
+  const expiresAt = Number(localStorage.getItem(expiresKey(portal)) || 0);
   if (!email || !expiresAt) return null;
   return { email, expiresAt };
 }
 
 export function markEmailVerified(portal, email) {
-  sessionStorage.setItem(verifiedKey(portal), email);
-  sessionStorage.removeItem(tokenKey(portal));
+  localStorage.setItem(verifiedKey(portal), email);
+  localStorage.removeItem(tokenKey(portal));
 }
 
 export function isEmailVerified(portal) {
-  return Boolean(sessionStorage.getItem(verifiedKey(portal)));
+  return Boolean(localStorage.getItem(verifiedKey(portal)));
 }
 
 function createMockToken(portal, email) {
   const token = `verify.dev.${portal}.${Date.now()}.${encodeURIComponent(email)}`;
-  sessionStorage.setItem(tokenKey(portal), token);
+  localStorage.setItem(tokenKey(portal), token);
   return token;
 }
 
 function isValidMockToken(portal, token) {
-  const stored = sessionStorage.getItem(tokenKey(portal));
+  const stored = localStorage.getItem(tokenKey(portal));
   return Boolean(token && stored && token === stored);
 }
 
 export function parseMockVerifyToken(token, portal) {
-  const prefix = `verify.dev.${portal}.`;
-  if (!token || !token.startsWith(prefix)) return null;
-  const rest = token.slice(prefix.length);
-  const dot = rest.indexOf(".");
-  if (dot <= 0) return null;
-  const timestamp = Number(rest.slice(0, dot));
-  const emailEnc = rest.slice(dot + 1);
-  if (!Number.isFinite(timestamp) || !emailEnc) return null;
-  try {
-    const email = decodeURIComponent(emailEnc);
-    if (!email) return null;
-    return { timestamp, email };
-  } catch {
-    return null;
-  }
+  if (!token || !token.startsWith("verify.dev.")) return null;
+  const parts = token.split(".");
+  if (parts.length < 5) return null;
+  const tPortal = parts[2];
+  const timestamp = Number(parts[3]);
+  const email = decodeURIComponent(parts[4]);
+  if (tPortal !== portal) return null;
+  return { email, timestamp };
 }
 
 function validateMockVerifyToken(token, portal) {
@@ -73,12 +66,17 @@ function validateMockVerifyToken(token, portal) {
     err.response = { data: { error: "This verification link is invalid or has expired." } };
     throw err;
   }
-  return { valid: true, email: parsed.email, mock: true };
+  return {
+    valid: true,
+    email: parsed.email,
+    mock: true,
+    role: portal === "professional" ? "individual" : "enterprise",
+  };
 }
 
 /** Mock link uses backend-shaped path on frontend: /account/verify-email/... */
 export function getMockVerifyEmailTo(portal) {
-  const token = sessionStorage.getItem(tokenKey(portal));
+  const token = localStorage.getItem(tokenKey(portal));
   if (!token) return null;
   return accountEmailPathForPortal(portal, "mockuid", token);
 }
@@ -95,7 +93,7 @@ export function getMockVerifyEmailLink(portal) {
 
 /** Backend email URL shape on frontend (with ?portal= for redirect handler). */
 export function getMockVerifyEmailBackendShapedLink(portal) {
-  const token = sessionStorage.getItem(tokenKey(portal));
+  const token = localStorage.getItem(tokenKey(portal));
   if (!token) return null;
   return `${getFrontendOrigin()}${buildAccountEmailLink("verify-email", "mockuid", token).replace(getFrontendOrigin(), "")}?portal=${portal}`;
 }
@@ -129,44 +127,30 @@ export async function resendSignupVerificationEmail(portal, email) {
   if (isMockApiEnabled()) {
     return mockSendVerification(portal, email);
   }
-  try {
-    return await apiResendVerification(email);
-  } catch (err) {
-    if (process.env.NODE_ENV === "development" && isNetworkError(err)) {
-      return mockSendVerification(portal, email);
-    }
-    throw err;
-  }
+  return await apiResendVerification(email);
 }
 
 /** GET /account/verify-email/:uidb64/:token/ */
 export async function validateSignupVerificationToken(uidb64, token, portal) {
-  const tryMockValidation = () => {
+  if (isMockApiEnabled()) {
+    await delay(200);
     const fromToken = validateMockVerifyToken(token, portal);
     if (fromToken) return fromToken;
     if (isValidMockToken(portal, token)) {
-      const email = sessionStorage.getItem(storageKey(portal)) || "";
-      return { valid: true, email, mock: true };
+      const email = localStorage.getItem(storageKey(portal)) || "";
+      return {
+        valid: true,
+        email,
+        mock: true,
+        role: portal === "professional" ? "individual" : "enterprise",
+      };
     }
     const err = new Error("Invalid or expired verification link.");
     err.response = { data: { error: "This verification link is invalid or has expired." } };
     throw err;
-  };
-
-  if (isMockApiEnabled()) {
-    await delay(200);
-    return tryMockValidation();
   }
 
-  try {
-    return await apiVerifyEmail(uidb64, token);
-  } catch (err) {
-    if (process.env.NODE_ENV === "development" && isNetworkError(err)) {
-      await delay(200);
-      return tryMockValidation();
-    }
-    throw err;
-  }
+  return await apiVerifyEmail(uidb64, token);
 }
 
 export function getEmailVerificationErrorMessage(err) {

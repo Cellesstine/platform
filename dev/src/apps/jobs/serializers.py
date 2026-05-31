@@ -68,17 +68,20 @@ class AnnouncementListSerializer(serializers.ModelSerializer):
     enterprise_name = serializers.CharField(
         source="enterprise.company_name", read_only=True
     )
+    enterprise_avatar = serializers.SerializerMethodField(read_only=True)
     applicant_count = serializers.IntegerField(read_only=True)
     role_display = serializers.CharField(source="get_role_display", read_only=True)
     job_type_display = serializers.CharField(source="get_job_type_display", read_only=True)
     industry_display = serializers.CharField(source="get_industry_display", read_only=True)
     wilaya_display = serializers.CharField(source="get_wilaya_display", read_only=True)
+    required_skills = serializers.StringRelatedField(many=True, read_only=True)
 
     class Meta:
         model  = Announcement
         fields = [
             "id",
             "enterprise_name",
+            "enterprise_avatar",
             "industry", "industry_display",
             "role", "role_display",
             "wilaya", "wilaya_display",
@@ -88,18 +91,23 @@ class AnnouncementListSerializer(serializers.ModelSerializer):
             "applicant_count",
             "deadline",
             "created_at",
-        ]
-
-
-class AnnouncementDetailSerializer(AnnouncementListSerializer):
-    required_skills = serializers.StringRelatedField(many=True, read_only=True)
-
-    class Meta(AnnouncementListSerializer.Meta):
-        fields = AnnouncementListSerializer.Meta.fields + [
             "description",
             "experience_required",
             "required_skills",
         ]
+
+    def get_enterprise_avatar(self, obj):
+        if obj.enterprise and obj.enterprise.avatar:
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.enterprise.avatar.url)
+            return obj.enterprise.avatar.url
+        return None
+
+
+class AnnouncementDetailSerializer(AnnouncementListSerializer):
+    class Meta(AnnouncementListSerializer.Meta):
+        fields = AnnouncementListSerializer.Meta.fields
 
 class ApplicationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -156,6 +164,11 @@ class ApplicationDetailsSerializer(serializers.ModelSerializer):
     announcement_company  = serializers.CharField(source="announcement.enterprise.company_name", read_only=True)
     applicant_email       = serializers.CharField(source="applicant.user.email",       read_only=True)
     applicant_name        = serializers.SerializerMethodField()
+    applicant_title       = serializers.CharField(source="applicant.professional_title", read_only=True, default="")
+    applicant_years_exp   = serializers.IntegerField(source="applicant.years_experience", read_only=True, default=0)
+    applicant_wilaya      = serializers.CharField(source="applicant.wilaya", read_only=True, default="")
+    applicant_wilaya_display = serializers.CharField(source="applicant.get_wilaya_display", read_only=True, default="")
+    applicant_skills      = serializers.SerializerMethodField()
 
     class Meta:
         model  = Application
@@ -163,6 +176,7 @@ class ApplicationDetailsSerializer(serializers.ModelSerializer):
             "id",
             "announcement", "announcement_title", "announcement_company",
             "applicant",    "applicant_email",    "applicant_name",
+            "applicant_title", "applicant_years_exp", "applicant_wilaya", "applicant_wilaya_display", "applicant_skills",
             "status",
             "cover_letter",
             "resume_file",
@@ -171,6 +185,11 @@ class ApplicationDetailsSerializer(serializers.ModelSerializer):
 
     def get_applicant_name(self, obj):
         return f"{obj.applicant.first_name} {obj.applicant.last_name}".strip()
+
+    def get_applicant_skills(self, obj):
+        if obj.applicant:
+            return [s.skill.name for s in obj.applicant.skills.select_related("skill")]
+        return []
 
 
 # ─────────────────────────────────────────────────────────────────────────────

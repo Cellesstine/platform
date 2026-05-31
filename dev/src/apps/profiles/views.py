@@ -21,11 +21,17 @@ from .serializers import (
     EntrepriseProfileSerializer,
     EnterpriseVerificationSerializer,
     EnterpriseProfileDetailsSerializer,
+    ProfessionalListSerializer,
     )
 
-@api_view(["POST"])
+@api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def profileSetup(request):
+    if request.method == "GET":
+        professionals = IndividualProfile.objects.all().order_by("-created_at")
+        serializer = ProfessionalListSerializer(professionals, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     role_param = request.data.get("role", "").lower()
 
     if not(role_param in ROLE_MAP):
@@ -112,15 +118,30 @@ def profileEdit(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def profileDetails(request, uidb64):
+    # Try decoding as base64 user primary key
     user = decode_uid(uidb64)
-    if user is None or not hasattr(user, 'profile'):
+    profile = None
+    is_owner = False
+    
+    if user is not None and hasattr(user, 'profile'):
+        profile = user.profile
+        is_owner = (request.user == user)
+    else:
+        # Try finding by profile ID (UUID) directly
+        try:
+            import uuid
+            val_uuid = uuid.UUID(uidb64)
+            profile = Profile.objects.filter(id=val_uuid).first()
+            if profile is not None:
+                is_owner = (request.user == profile.user)
+        except (ValueError, TypeError, AttributeError):
+            pass
+            
+    if profile is None:
         return Response(
             {'error': 'Profile not found.'},
             status=status.HTTP_404_NOT_FOUND,
         )
-
-    profile = user.profile
-    is_owner = (request.user == user)
 
     if profile.role == Profile.Role.INDIVIDUAL:
         if not hasattr(profile, 'individualprofile'):
@@ -138,7 +159,7 @@ def profileDetails(request, uidb64):
             'skills__skill'
         ).get(id=profile.individualprofile.id)
 
-        serializer = IndividualProfileDetailsSerializer(individual_profile)
+        serializer = IndividualProfileDetailsSerializer(individual_profile, context={'request': request})
     else:
         if not hasattr(profile, 'enterpriseprofile'):
             return Response(
@@ -150,7 +171,7 @@ def profileDetails(request, uidb64):
             'social_links'
         ).get(id=profile.enterpriseprofile.id)
 
-        serializer = EnterpriseProfileDetailsSerializer(enterprise_profile)
+        serializer = EnterpriseProfileDetailsSerializer(enterprise_profile, context={'request': request})
 
     return Response(
         {**serializer.data, "is_owner": is_owner},
@@ -184,7 +205,7 @@ def myProfileDetails(request):
             'skills__skill'
         ).get(id=profile.individualprofile.id)
 
-        serializer = IndividualProfileDetailsSerializer(individual_profile)
+        serializer = IndividualProfileDetailsSerializer(individual_profile, context={'request': request})
     else:
         if not hasattr(profile, 'enterpriseprofile'):
             return Response(
@@ -197,7 +218,7 @@ def myProfileDetails(request):
             'social_links'
         ).get(id=profile.enterpriseprofile.id)
 
-        serializer = EnterpriseProfileDetailsSerializer(enterprise_profile)
+        serializer = EnterpriseProfileDetailsSerializer(enterprise_profile, context={'request': request})
 
     return Response(
         {**serializer.data, "is_owner": True},
