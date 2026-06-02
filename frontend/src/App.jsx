@@ -6,7 +6,7 @@ import GuestRoute from "./components/GuestRoute";
 
 // Public
 import LandingPage from "./pages/public/LandingPage";
-import AboutPage from "./pages/public/AboutPage";
+
 import HowItWorksPage from "./pages/public/HowItWorksPage";
 import CompanyPublicPage from "./pages/public/CompanyPublicPage";
 
@@ -68,7 +68,7 @@ export default function App() {
       <Routes>
         {/* Public */}
         <Route path="/" element={<LandingPage />} />
-        <Route path="/about" element={<AboutPage />} />
+
         <Route path="/how" element={<HowItWorksPage />} />
         <Route path="/companies/:id" element={<CompanyPublicPage />} />
 

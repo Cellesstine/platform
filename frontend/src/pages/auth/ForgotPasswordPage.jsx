@@ -41,6 +41,13 @@ export default function ForgotPasswordPage() {
 
   return (
     <PasswordResetShell topbar={<PasswordResetTopbar />}>
+      <button
+        type="button"
+        onClick={() => navigate("/sign-in")}
+        className="text-sm text-gray-400 hover:text-gray-950 transition-colors mb-6 inline-flex items-center gap-1.5 font-medium self-start"
+      >
+        ← Back
+      </button>
       <div className="w-14 h-14 bg-[#4c0527]/10 rounded-2xl flex items-center justify-center mb-6">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
           <rect x="5" y="11" width="14" height="10" rx="2" stroke="#4c0527" strokeWidth="1.5" />

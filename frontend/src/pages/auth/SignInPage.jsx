@@ -10,13 +10,34 @@ import { syncIndividualProfileId } from "../../services/applicationsApi";
 
 const leftContent = (
   <div className="text-left flex flex-col items-start justify-center w-full max-w-sm mx-auto">
-    <p className="text-[10px] tracking-[0.2em] text-white/60 uppercase mb-2">WELCOME BACK</p>
-    <h2 className="font-serif text-3xl font-normal text-white leading-snug mb-6 italic">
-      Connect with your<br />professional sphere.
+    <div className="flex items-center gap-3 mb-6">
+      <span className="block w-8 h-[1.5px] bg-[#D4AD55]"></span>
+      <p className="text-[10px] tracking-[0.25em] text-[#D4AD55] uppercase font-medium">Welcome Back</p>
+      <span className="block w-8 h-[1.5px] bg-[#D4AD55]"></span>
+    </div>
+    <h2 className="font-serif text-4xl font-semibold text-white leading-tight mb-3 tracking-tight">
+      Connect with your<br /><em className="italic text-[#D4AD55]">sphere.</em>
     </h2>
-    <p className="text-sm text-white/70 leading-relaxed font-light">
-      Access your dashboard, manage active engagements, and connect with your network.
+    <h3 className="font-serif text-2xl font-normal text-white/80 leading-snug mb-8 italic">
+      Continue building.
+    </h3>
+    <p className="text-sm text-white/60 leading-relaxed font-light mb-8">
+      Access your dashboard, manage active engagements, and connect with your professional network.
     </p>
+    <div className="flex flex-col gap-3 w-full">
+      <div className="flex items-center gap-3">
+        <span className="w-1.5 h-1.5 rounded-full bg-[#D4AD55] shadow-[0_0_6px_rgba(212,173,85,0.5)]"></span>
+        <span className="text-xs text-white/50 font-light">Your dashboard awaits</span>
+      </div>
+      <div className="flex items-center gap-3">
+        <span className="w-1.5 h-1.5 rounded-full bg-[#D4AD55] shadow-[0_0_6px_rgba(212,173,85,0.5)]"></span>
+        <span className="text-xs text-white/50 font-light">Manage engagements & applications</span>
+      </div>
+      <div className="flex items-center gap-3">
+        <span className="w-1.5 h-1.5 rounded-full bg-[#D4AD55] shadow-[0_0_6px_rgba(212,173,85,0.5)]"></span>
+        <span className="text-xs text-white/50 font-light">Grow your professional network</span>
+      </div>
+    </div>
   </div>
 );
 
@@ -97,6 +118,13 @@ export default function SignInPage() {
 
   return (
     <AuthLayout leftContent={leftContent} leftBg="bg-gradient-to-br from-[#4c0527] to-[#2d0217]">
+      <button
+        type="button"
+        onClick={() => navigate("/")}
+        className="text-sm text-gray-400 hover:text-gray-950 transition-colors mb-6 inline-flex items-center gap-1.5 font-medium"
+      >
+        ← Back
+      </button>
       <PageTitle title="Good to have you back." subtitle="Enter your credentials to continue." />
 
       {reactivated || successMessage ? (
@@ -123,10 +151,7 @@ export default function SignInPage() {
         placeholder="Your password"
       />
 
-      <div className="flex justify-between items-center mb-5">
-        <label className="flex items-center gap-2 text-sm text-gray-500 cursor-pointer">
-          <input type="checkbox" className={theme.checkbox} /> Remember me
-        </label>
+      <div className="flex justify-end items-center mb-5">
         <button
           type="button"
           className={`text-sm ${theme.textAccent}`}
@@ -155,9 +180,18 @@ export default function SignInPage() {
         </div>
       ) : null}
 
-      <PrimaryButton portal="business" disabled={!canSignIn || loading} loading={loading} onClick={handleSignIn}>
+      <button
+        type="button"
+        disabled={!canSignIn || loading}
+        onClick={handleSignIn}
+        className={`w-full py-3 rounded-linkio text-sm font-semibold transition-all duration-300 ${
+          canSignIn && !loading
+            ? "bg-gradient-to-r from-[#4c0527] to-[#2d0217] text-white hover:opacity-90 hover:shadow-lg cursor-pointer"
+            : "bg-gray-200 text-gray-400 cursor-not-allowed"
+        }`}
+      >
         {loading ? "Signing in…" : "Sign in →"}
-      </PrimaryButton>
+      </button>
 
       <p className="text-sm text-gray-500 text-center mt-4">
         Don&apos;t have an account?{" "}

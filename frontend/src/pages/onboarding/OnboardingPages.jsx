@@ -26,7 +26,7 @@ import {
 } from "../../services/profilesApi";
 
 const bizBenefits = [
-  "Post jobs across all 58 wilayas",
+  "Post jobs across all 69 wilayas",
   "Browse verified professionals",
   "Commission freelancers directly",
   "Build a verified company presence",

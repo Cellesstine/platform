@@ -5,7 +5,7 @@ const steps = {
     { n: "1", title: "Create your account", desc: "Sign up with your email or Google account. Choose your role as a professional to get started." },
     { n: "2", title: "Build your profile", desc: "Add your skills, experience, wilaya, and upload your CV. The more complete your profile, the better your visibility." },
     { n: "3", title: "Get verified", desc: "Our admin team reviews your profile and documents within 24–48 hours. Once verified, you can apply to jobs." },
-    { n: "4", title: "Apply & connect", desc: "Browse announcements from across all 58 wilayas, apply directly, or receive offers from companies who find you." },
+    { n: "4", title: "Apply & connect", desc: "Browse announcements from across all 69 wilayas, apply directly, or receive offers from companies who find you." },
   ],
   businesses: [
     { n: "1", title: "Create your business", desc: "Register your company with your official documents. Our team verifies your enterprise profile." },

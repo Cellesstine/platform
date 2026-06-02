@@ -133,13 +133,34 @@ export function ProfessionalAccountPage() {
 
   const profLeft = (
     <div className="text-left flex flex-col items-start justify-center w-full max-w-sm mx-auto">
-      <p className="text-[10px] tracking-[0.2em] text-white/60 uppercase mb-2">PROFESSIONAL</p>
-      <h2 className="font-serif text-3xl font-normal text-white leading-snug mb-6 italic">
-        Position your expertise.<br />Accelerate your career.
+      <div className="flex items-center gap-3 mb-6">
+        <span className="block w-8 h-[1.5px] bg-[#D4AD55]"></span>
+        <p className="text-[10px] tracking-[0.25em] text-[#D4AD55] uppercase font-medium">Professional</p>
+        <span className="block w-8 h-[1.5px] bg-[#D4AD55]"></span>
+      </div>
+      <h2 className="font-serif text-4xl font-semibold text-white leading-tight mb-3 tracking-tight">
+        Position your<br /><em className="italic text-[#D4AD55]">expertise.</em>
       </h2>
-      <p className="text-sm text-white/70 leading-relaxed font-light">
-        Create a premium profile, showcase your achievements, and connect with top enterprises and projects.
+      <h3 className="font-serif text-2xl font-normal text-white/80 leading-snug mb-8 italic">
+        Accelerate your career.
+      </h3>
+      <p className="text-sm text-white/60 leading-relaxed font-light mb-8">
+        Create a premium profile, showcase validated achievements, and connect with leading enterprises seeking elite talent across Algeria.
       </p>
+      <div className="flex flex-col gap-3 w-full">
+        <div className="flex items-center gap-3">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#D4AD55] shadow-[0_0_6px_rgba(212,173,85,0.5)]"></span>
+          <span className="text-xs text-white/50 font-light">Verified skill profile</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#D4AD55] shadow-[0_0_6px_rgba(212,173,85,0.5)]"></span>
+          <span className="text-xs text-white/50 font-light">Smart opportunity matching</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#D4AD55] shadow-[0_0_6px_rgba(212,173,85,0.5)]"></span>
+          <span className="text-xs text-white/50 font-light">Reputation that grows with you</span>
+        </div>
+      </div>
     </div>
   );
 
@@ -147,6 +168,13 @@ export function ProfessionalAccountPage() {
 
   return (
     <PortalSplitLayout portal="professional" leftContent={profLeft}>
+      <button
+        type="button"
+        onClick={() => navigate("/")}
+        className="text-sm text-gray-400 hover:text-gray-950 transition-colors mb-6 inline-flex items-center gap-1.5 font-medium"
+      >
+        ← Back
+      </button>
       <PageTitle title="Create your account" subtitle={<em className="italic">Enter professional credentials.</em>} />
 
       {/* Sleek Floating Switcher Cards inside a rounded-rectangle wrapper */}

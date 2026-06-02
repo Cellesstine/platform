@@ -8,7 +8,7 @@ export default function PortalSplitLayout({ portal, leftContent, children }) {
     <div className="min-h-screen flex flex-col lg:flex-row bg-cream font-sans">
       {/* Left Column */}
       <div
-        className={`hidden lg:flex w-full lg:w-[40%] ${theme.panelClass} text-white flex-col justify-center px-12 xl:px-16 py-14`}
+        className={`hidden lg:flex w-full lg:w-[40%] ${theme.panelClass} text-white flex-col justify-center p-10 lg:p-16 relative`}
       >
         {leftContent}
       </div>

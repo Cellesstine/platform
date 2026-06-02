@@ -9,13 +9,34 @@ import { parseApiError } from "../../services/auth";
 
 const leftContent = (
   <div className="text-left flex flex-col items-start justify-center w-full max-w-sm mx-auto">
-    <p className="text-[10px] tracking-[0.2em] text-white/60 uppercase mb-2">BUSINESS</p>
-    <h2 className="font-serif text-3xl font-normal text-white leading-snug mb-6 italic">
-      Acquire elite talent.<br />Scale your enterprise.
+    <div className="flex items-center gap-3 mb-6">
+      <span className="block w-8 h-[1.5px] bg-[#D4AD55]"></span>
+      <p className="text-[10px] tracking-[0.25em] text-[#D4AD55] uppercase font-medium">Business</p>
+      <span className="block w-8 h-[1.5px] bg-[#D4AD55]"></span>
+    </div>
+    <h2 className="font-serif text-4xl font-semibold text-white leading-tight mb-3 tracking-tight">
+      Acquire elite<br /><em className="italic text-[#D4AD55]">talent.</em>
     </h2>
-    <p className="text-sm text-white/70 leading-relaxed font-light">
-      Build a verified presence to hire Algerian professionals, post jobs, and contract specialists directly.
+    <h3 className="font-serif text-2xl font-normal text-white/80 leading-snug mb-8 italic">
+      Scale your enterprise.
+    </h3>
+    <p className="text-sm text-white/60 leading-relaxed font-light mb-8">
+      Build a verified presence to hire Algerian professionals, post targeted job listings, and contract specialists directly.
     </p>
+    <div className="flex flex-col gap-3 w-full">
+      <div className="flex items-center gap-3">
+        <span className="w-1.5 h-1.5 rounded-full bg-[#D4AD55] shadow-[0_0_6px_rgba(212,173,85,0.5)]"></span>
+        <span className="text-xs text-white/50 font-light">Verified enterprise profile</span>
+      </div>
+      <div className="flex items-center gap-3">
+        <span className="w-1.5 h-1.5 rounded-full bg-[#D4AD55] shadow-[0_0_6px_rgba(212,173,85,0.5)]"></span>
+        <span className="text-xs text-white/50 font-light">Browse professionals across 69 wilayas</span>
+      </div>
+      <div className="flex items-center gap-3">
+        <span className="w-1.5 h-1.5 rounded-full bg-[#D4AD55] shadow-[0_0_6px_rgba(212,173,85,0.5)]"></span>
+        <span className="text-xs text-white/50 font-light">Post jobs & commission freelancers</span>
+      </div>
+    </div>
   </div>
 );
 
@@ -64,7 +85,14 @@ export default function RegisterPage() {
   };
 
   return (
-    <AuthLayout leftContent={leftContent} leftBg="bg-red">
+    <AuthLayout leftContent={leftContent} leftBg="bg-gradient-to-br from-[#4c0527] to-[#2d0217]">
+      <button
+        type="button"
+        onClick={() => navigate("/")}
+        className="text-sm text-gray-400 hover:text-gray-950 transition-colors mb-6 inline-flex items-center gap-1.5 font-medium"
+      >
+        ← Back
+      </button>
       <PageTitle title="Create your account" subtitle={<em className="italic">Provide your business credentials.</em>} />
 
       {/* Sleek Floating Switcher Cards inside a rounded-rectangle wrapper */}

@@ -14,8 +14,8 @@ export const PORTALS = {
     skillTag: "bg-red/10 text-red",
   },
   professional: {
-    panelClass: "bg-navy-deep",
-    panelGradient: "bg-navy-deep",
+    panelClass: "bg-gradient-to-br from-[#0f2540] to-[#091525]",
+    panelGradient: "bg-gradient-to-br from-[#0f2540] to-[#091525]",
     primaryBtn: "btn-linkio-navy",
     primaryBtnDisabled: "w-full py-3.5 rounded-linkio text-sm font-medium bg-navy/40 text-white/80 cursor-not-allowed",
     textAccent: "text-navy",
