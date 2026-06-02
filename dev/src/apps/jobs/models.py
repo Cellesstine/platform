@@ -1,37 +1,27 @@
 import uuid
 from django.db import models
-from django.utils import timezone
 
-from apps.core.models import (
-	TimeStampedModel
-	)
-
-from apps.core.utils import (
-    WILAYA_CHOICES
-    )
-
-from apps.profiles.models import (
-	Skill,
-	EnterpriseProfile,
-    IndividualProfile,
-	)
-
-from apps.profiles.utils import (
-    Industry,
-    )
+from apps.core.models import TimeStampedModel
+from apps.core.utils import WILAYA_CHOICES
+from apps.profiles.models import Skill, EnterpriseProfile, IndividualProfile
+from apps.profiles.utils import Industry
 
 from .utils import (
     JobType,
     JobRole,
     JobPostManager,
-    ApplicationStatus, 
+    ApplicationStatus,
     AnnouncementStatus,
     upload_resume_applications,
-    )
+)
+
 
 class Announcement(TimeStampedModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    enterprise = models.ForeignKey(EnterpriseProfile, on_delete=models.CASCADE, related_name="announcements")
+    enterprise = models.ForeignKey(
+        EnterpriseProfile, on_delete=models.CASCADE, related_name="announcements"
+    )
+    title = models.CharField(max_length=200, verbose_name="Titre")
     industry = models.CharField(max_length=50, choices=Industry.choices)
     role = models.CharField(max_length=50, choices=JobRole.choices)
     wilaya = models.CharField(max_length=50, choices=WILAYA_CHOICES)
@@ -39,7 +29,9 @@ class Announcement(TimeStampedModel):
     description = models.TextField()
 
     job_type = models.CharField(max_length=50, choices=JobType.choices)
-    status = models.CharField(max_length=50, choices=AnnouncementStatus.choices, default=AnnouncementStatus.DRAFT)
+    status = models.CharField(
+        max_length=50, choices=AnnouncementStatus.choices, default=AnnouncementStatus.DRAFT
+    )
 
     required_skills = models.ManyToManyField(Skill, blank=True, related_name="announcements")
     experience_required = models.PositiveIntegerField(default=0, null=True, blank=True)
@@ -54,7 +46,7 @@ class Announcement(TimeStampedModel):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.industry} - {self.role}, {self.job_type} at {self.enterprise.company_name},"
+        return self.title
 
     def is_active(self):
         return self.status == AnnouncementStatus.ACTIVE
@@ -75,29 +67,33 @@ class Announcement(TimeStampedModel):
 
     @property
     def applicant_count(self):
-        if hasattr(self, "_applicant_count"):
-            return self._applicant_count
         return self.applications.count()
 
-    @applicant_count.setter
-    def applicant_count(self, value):
-        self._applicant_count = value
 
 class Application(TimeStampedModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    announcement = models.ForeignKey(Announcement, on_delete=models.CASCADE, related_name="applications")
+    announcement = models.ForeignKey(
+        Announcement, on_delete=models.CASCADE, related_name="applications"
+    )
 
-    applicant = models.ForeignKey(IndividualProfile, on_delete=models.CASCADE, related_name="applications")
+    applicant = models.ForeignKey(
+        IndividualProfile, on_delete=models.CASCADE, related_name="applications"
+    )
     cover_letter = models.TextField()
 
-    status = models.CharField(max_length=50, choices=ApplicationStatus.choices, default=ApplicationStatus.PENDING)
+    status = models.CharField(
+        max_length=50, choices=ApplicationStatus.choices, default=ApplicationStatus.PENDING
+    )
 
-    resume_file = models.FileField(upload_to=upload_resume_applications, null=True, blank=True)
+    resume_file = models.FileField(
+        upload_to=upload_resume_applications, null=True, blank=True
+    )
+
     class Meta:
         db_table = "jobs_applications"
         ordering = ["-created_at"]
 
-    def __str__(self): 
+    def __str__(self):
         return f"{self.applicant}, {self.announcement}, {self.status}"
 
     def mark_reviewed(self):
@@ -105,10 +101,9 @@ class Application(TimeStampedModel):
         self.save(update_fields=["status", "updated_at"])
 
     def accept(self):
-        self.status = ApplicationStatus.ACCEPT
+        self.status = ApplicationStatus.ACCEPTED
         self.save(update_fields=["status", "updated_at"])
 
     def reject(self):
-        self.status = ApplicationStatus.REJECT
+        self.status = ApplicationStatus.REJECTED
         self.save(update_fields=["status", "updated_at"])
-
