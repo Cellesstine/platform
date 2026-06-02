@@ -74,7 +74,6 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 SOCIALACCOUNT_ADAPTER = 'apps.accounts.adapters.CustomSocialAccountAdapter'
-LOGIN_REDIRECT_URL = '/account/oauth-callback/'
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -178,6 +177,15 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-if DEBUG:
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 465
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = True
+
+EMAIL_HOST_USER = "linkioteam@gmail.com"
+EMAIL_HOST_PASSWORD = "yhxr zrae insd mrdm"
+
+#if DEBUG:
+#    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
     
