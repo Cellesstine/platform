@@ -95,14 +95,7 @@ const COMPANY_SIZE_CHOICES = [
   { value: "LARGE", label: "Large (200+)" },
 ];
 
-// ── Shared helpers ────────────────────────────────────────
-const Input = ({ label, placeholder, defaultValue, type = "text", className = "" }) => (
-  <div className={`flex flex-col gap-1 mb-4 ${className}`}>
-    {label && <label className="text-sm font-medium">{label}</label>}
-    <input type={type} placeholder={placeholder} defaultValue={defaultValue}
-      className="px-4 py-3 rounded-xl border border-gray-200 bg-cream text-sm outline-none focus:border-navy focus:bg-white w-full" />
-  </div>
-);
+
 
 // ── Dashboard Home ────────────────────────────────────────
 // ── Dashboard Home ────────────────────────────────────────
@@ -935,27 +928,32 @@ export function FindWorkersPage() {
               .join("")
               .slice(0, 2)
               .toUpperCase();
+            
+            const displayWilaya = w.wilaya 
+              ? w.wilaya.split("_").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ")
+              : "Alger";
+
             return (
-              <div key={w.id} className="linkio-panel p-5 hover:shadow-md transition-all flex flex-col justify-between">
+              <div key={w.id} className="bg-white border border-gray-100 rounded-3xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 flex flex-col justify-between shadow-sm">
                 <div>
                   <div
-                    className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-semibold mb-3 text-navy-deep"
+                    className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-semibold mb-3.5 text-[#0B1E36] shadow-sm"
                     style={{ background: AVATAR_COLORS[index % AVATAR_COLORS.length] }}
                   >
                     {ini}
                   </div>
-                  <p className="font-semibold text-sm mb-0.5">{w.full_name}</p>
-                  <p className="text-xs text-gray-400 mb-3">
-                    {w.professional_title} · {w.wilaya}
+                  <p className="font-semibold text-gray-900 text-sm mb-0.5">{w.full_name}</p>
+                  <p className="text-xs text-gray-400 mb-3.5">
+                    {w.professional_title} · {displayWilaya}
                   </p>
-                  <span className="text-xs px-2.5 py-1 bg-red/5 text-red rounded-full inline-block mb-4 font-medium">
+                  <span className="text-[10px] uppercase tracking-wider px-2.5 py-1 bg-green-50 text-green-700 border border-green-200/50 rounded-full inline-block mb-4 font-bold">
                     {w.years_experience ?? 0} yrs experience
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={() => handleViewProfile(w)}
-                  className="w-full py-2 bg-[#0B1E36] hover:bg-[#061120] rounded-xl text-sm text-white font-medium active:scale-95 transition-all cursor-pointer mt-2"
+                  className="w-full py-2.5 bg-[#0B1E36] hover:bg-[#132c4d] rounded-2xl text-xs text-white font-semibold active:scale-95 transition-all cursor-pointer mt-2 shadow-sm"
                 >
                   View Profile
                 </button>
@@ -1014,9 +1012,17 @@ export function FindWorkersPage() {
                     <div className="space-y-6">
                       {/* Quick Overview */}
                       <div className="flex items-center gap-4 border-b border-gray-150 pb-5">
-                        <div className="w-16 h-16 bg-[#4c0527]/10 rounded-full flex items-center justify-center text-[#4c0527] font-semibold text-lg flex-shrink-0">
-                          {initials}
-                        </div>
+                        {p.avatar ? (
+                          <img
+                            src={p.avatar}
+                            alt={p.full_name}
+                            className="w-16 h-16 rounded-full object-cover flex-shrink-0 border border-gray-100"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 bg-[#0B1E36]/10 text-[#0B1E36] rounded-full flex items-center justify-center font-semibold text-lg flex-shrink-0">
+                            {initials}
+                          </div>
+                        )}
                         <div>
                           <p className="font-semibold text-gray-900 text-lg">{p.full_name}</p>
                           <p className="text-sm text-gray-500">{p.professional_title}</p>
@@ -1032,9 +1038,11 @@ export function FindWorkersPage() {
                         <div className="space-y-3">
                           <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Contact & Location</h4>
                           <div className="space-y-2 text-sm text-gray-700">
-                            <p><span className="text-gray-400 font-medium">Email:</span> {p.email || "Contact to view"}</p>
-                            <p><span className="text-gray-400 font-medium">Phone:</span> {p.phone || "Contact to view"}</p>
-                            <p><span className="text-gray-400 font-medium">Wilaya:</span> {p.wilaya || "Not provided"}</p>
+                            <p><span className="text-gray-400 font-medium">Email:</span> {p.email || "Not provided"}</p>
+                            <p><span className="text-gray-400 font-medium">Phone:</span> {p.phone || "Not provided"}</p>
+                            <p><span className="text-gray-400 font-medium">Wilaya:</span> {p.wilaya ? p.wilaya.split("_").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ") : "Not provided"}</p>
+                            <p><span className="text-gray-400 font-medium">Address:</span> {p.address || "Not provided"}</p>
+                            <p><span className="text-gray-400 font-medium">Availability:</span> {p.availability === "AVAILABLE" ? "Available Now" : p.availability === "OPEN" ? "Open to Opportunities" : "Not Available"}</p>
                           </div>
                         </div>
 
@@ -1092,6 +1100,49 @@ export function FindWorkersPage() {
                           </div>
                         </div>
                       )}
+
+                      {/* Portfolio Links */}
+                      {p.portfolios && p.portfolios.length > 0 && (
+                        <div className="space-y-3 border-t border-gray-150 pt-5">
+                          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Portfolio Links</h4>
+                          <div className="space-y-2">
+                            {p.portfolios.map((port, idx) => (
+                              <div key={idx} className="flex items-center justify-between p-3 border border-gray-100 rounded-xl bg-gray-50/50">
+                                <span className="text-xs text-gray-600 truncate max-w-[280px]">{port.url || port}</span>
+                                <a
+                                  href={port.url || port}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-navy font-semibold hover:underline"
+                                >
+                                  Visit Link →
+                                </a>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Resume / CV Document */}
+                      {p.resume_file && (
+                        <div className="space-y-3 border-t border-gray-150 pt-5">
+                          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Resume / CV</h4>
+                          <div className="flex items-center justify-between p-3 border border-gray-100 rounded-xl bg-gray-50/50">
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg">📄</span>
+                              <span className="text-xs font-medium text-gray-700">CV Document (PDF)</span>
+                            </div>
+                            <a
+                              href={p.resume_file}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-navy font-semibold hover:underline"
+                            >
+                              View Document →
+                            </a>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })()
@@ -1106,16 +1157,9 @@ export function FindWorkersPage() {
                   setSelectedWorker(null);
                   setSelectedWorkerDetails(null);
                 }}
-                className="px-5 py-2 border border-gray-200 rounded-full text-xs font-semibold hover:bg-gray-100 transition-colors cursor-pointer"
+                className="px-6 py-2.5 bg-[#0B1E36] hover:bg-[#132c4d] text-white rounded-full text-xs font-semibold active:scale-95 transition-all cursor-pointer shadow-md"
               >
                 Close
-              </button>
-              <button
-                type="button"
-                className="px-5 py-2 bg-[#0B1E36] text-white rounded-full text-xs font-semibold hover:bg-[#061120] active:scale-95 transition-all cursor-pointer animate-pulse"
-                disabled
-              >
-                Contact (coming soon)
               </button>
             </div>
 
@@ -1496,6 +1540,8 @@ export function CompanyProfilePage() {
   const [error, setError] = useState("");
   const [company, setCompany] = useState(null);
   const [stats, setStats] = useState({ announcementsCount: 0, applicantsCount: 0 });
+  const [applicantIncrease, setApplicantIncrease] = useState(12);
+  const [monthlyStats, setMonthlyStats] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1518,8 +1564,75 @@ export function CompanyProfilePage() {
         try {
           const applicationsData = await listApplications();
           applicantsCount = applicationsData.length;
+
+          if (applicationsData.length > 0) {
+            // 1. Applicant Increase Percent: Dynamic comparison of current 30 days vs previous 30 days
+            const now = new Date();
+            const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+
+            const currentMonthApps = applicationsData.filter(app => new Date(app.created_at) >= thirtyDaysAgo);
+            const previousMonthApps = applicationsData.filter(app => {
+              const date = new Date(app.created_at);
+              return date >= sixtyDaysAgo && date < thirtyDaysAgo;
+            });
+
+            const currentCount = currentMonthApps.length;
+            const previousCount = previousMonthApps.length;
+
+            if (previousCount > 0) {
+              const pct = Math.round(((currentCount - previousCount) / previousCount) * 100);
+              setApplicantIncrease(pct);
+            } else if (currentCount > 0) {
+              setApplicantIncrease(100);
+            } else {
+              setApplicantIncrease(0);
+            }
+
+            // 2. Calculate dynamic applicant stats for the past 12 months
+            const monthsData = [];
+            
+            // Generate list of past 12 months (e.g. { name: "Jan", month: 0, year: 2026, count: 0 })
+            for (let i = 11; i >= 0; i--) {
+              const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+              monthsData.push({
+                name: d.toLocaleDateString("en-US", { month: "short" }),
+                month: d.getMonth(),
+                year: d.getFullYear(),
+                count: 0
+              });
+            }
+
+            // Group applications by month
+            applicationsData.forEach(app => {
+              const appDate = new Date(app.created_at);
+              const m = appDate.getMonth();
+              const y = appDate.getFullYear();
+              
+              const found = monthsData.find(item => item.month === m && item.year === y);
+              if (found) {
+                found.count += 1;
+              }
+            });
+
+            setMonthlyStats(monthsData);
+          } else {
+            // Generate empty past 12 months
+            const monthsData = [];
+            const now = new Date();
+            for (let i = 11; i >= 0; i--) {
+              const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+              monthsData.push({
+                name: d.toLocaleDateString("en-US", { month: "short" }),
+                month: d.getMonth(),
+                year: d.getFullYear(),
+                count: 0
+              });
+            }
+            setMonthlyStats(monthsData);
+          }
         } catch (err) {
-          console.error("Failed to load applications count:", err);
+          console.error("Failed to load applications count & calculate stats:", err);
         }
 
         if (cancelled) return;
@@ -1569,6 +1682,25 @@ export function CompanyProfilePage() {
   };
 
   const initials = getInitials(company.company_name);
+
+  // Path calculations for 12 months curve
+  let pathD = "M 30,130 L 470,130";
+  let fillD = "M 30,130 L 470,130 L 470,140 L 30,140 Z";
+  let currentY = 130;
+  let maxCount = 0;
+
+  if (monthlyStats.length > 0) {
+    maxCount = Math.max(...monthlyStats.map(m => m.count), 0);
+    const points = monthlyStats.map((item, i) => {
+      const x = 30 + i * 40;
+      const y = maxCount > 0 ? 130 - (item.count / maxCount) * 110 : 130;
+      return { x, y };
+    });
+    
+    pathD = `M ${points.map(p => `${p.x},${p.y}`).join(" L ")}`;
+    fillD = `${pathD} L 470,140 L 30,140 Z`;
+    currentY = points[11].y;
+  }
 
   const getIndustryLabel = (ind) => {
     const choices = {
@@ -1759,7 +1891,7 @@ export function CompanyProfilePage() {
             <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6 md:gap-8 divide-y lg:divide-y-0 lg:divide-x divide-gray-100">
               
               {/* Left Side: Real Metrics */}
-              <div className="space-y-6 pr-2 flex flex-col justify-center">
+              <div className="space-y-8 pr-2 flex flex-col justify-center">
                 {/* Stat 1: Active Announcements */}
                 <div>
                   <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
@@ -1788,23 +1920,11 @@ export function CompanyProfilePage() {
                   </div>
                   <div className="font-serif text-3xl font-black text-gray-900 tracking-tight flex items-baseline gap-1.5">
                     {stats.applicantsCount}
-                    <span className="text-xs text-emerald-500 font-sans font-medium flex items-center gap-0.5">
-                      ▲ 12%
+                    <span className={`text-xs font-sans font-medium flex items-center gap-0.5 ${
+                      applicantIncrease >= 0 ? "text-emerald-500" : "text-amber-600"
+                    }`}>
+                      {applicantIncrease >= 0 ? "▲" : "▼"} {Math.abs(applicantIncrease)}%
                     </span>
-                  </div>
-                </div>
-
-                {/* Stat 3: Avg Review time */}
-                <div>
-                  <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="opacity-80">
-                      <circle cx="12" cy="12" r="10" />
-                      <polyline points="12 6 12 12 16 14" />
-                    </svg>
-                    Review Velocity
-                  </div>
-                  <div className="font-serif text-2xl font-black text-[#3C0713] tracking-tight">
-                    &lt; 48 Hours
                   </div>
                 </div>
               </div>
@@ -1812,7 +1932,7 @@ export function CompanyProfilePage() {
               {/* Right Side: Magnificent SVG Application Curve */}
               <div className="pt-6 lg:pt-0 lg:pl-8 flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-3">
-                  <span className="text-xs text-gray-500 font-bold tracking-wide uppercase">Application Curve (Past 6 Months)</span>
+                  <span className="text-xs text-gray-500 font-bold tracking-wide uppercase">Application Curve (Past 12 Months)</span>
                   <span className="text-[11px] text-gray-400 font-medium">Updated just now</span>
                 </div>
                 
@@ -1834,13 +1954,13 @@ export function CompanyProfilePage() {
 
                     {/* Gradient Fill under the Curve */}
                     <path
-                      d="M 30,130 C 100,120 130,60 200,90 C 270,120 320,40 400,50 C 430,55 450,30 470,25 L 470,140 L 30,140 Z"
+                      d={fillD}
                       fill="url(#chart-gradient)"
                     />
                     
-                    {/* Smooth glowing Bezier curve stroke */}
+                    {/* Smooth glowing curve stroke */}
                     <path
-                      d="M 30,130 C 100,120 130,60 200,90 C 270,120 320,40 400,50 C 430,55 450,30 470,25"
+                      d={pathD}
                       stroke="#3C0713"
                       strokeWidth="3.5"
                       strokeLinecap="round"
@@ -1848,16 +1968,32 @@ export function CompanyProfilePage() {
                     />
 
                     {/* Active Glowing Dot at current peak */}
-                    <circle cx="470" cy="25" r="5" fill="#3C0713" stroke="white" strokeWidth="2" />
-                    <circle cx="470" cy="25" r="10" fill="#3C0713" fillOpacity="0.15" />
+                    {monthlyStats.length > 0 && (
+                      <>
+                        <circle cx="470" cy={currentY} r="5" fill="#3C0713" stroke="white" strokeWidth="2" />
+                        <circle cx="470" cy={currentY} r="10" fill="#3C0713" fillOpacity="0.15" />
+                      </>
+                    )}
 
                     {/* Chart axis labels */}
-                    <text x="30" y="152" fill="#94a3b8" fontSize="10" fontFamily="sans-serif" textAnchor="middle" fontWeight="bold">Jan</text>
-                    <text x="118" y="152" fill="#94a3b8" fontSize="10" fontFamily="sans-serif" textAnchor="middle" fontWeight="bold">Feb</text>
-                    <text x="206" y="152" fill="#94a3b8" fontSize="10" fontFamily="sans-serif" textAnchor="middle" fontWeight="bold">Mar</text>
-                    <text x="294" y="152" fill="#94a3b8" fontSize="10" fontFamily="sans-serif" textAnchor="middle" fontWeight="bold">Apr</text>
-                    <text x="382" y="152" fill="#94a3b8" fontSize="10" fontFamily="sans-serif" textAnchor="middle" fontWeight="bold">May</text>
-                    <text x="470" y="152" fill="#3C0713" fontSize="10" fontFamily="sans-serif" textAnchor="middle" fontWeight="bold">Jun</text>
+                    {monthlyStats.map((item, i) => {
+                      const x = 30 + i * 40;
+                      const isCurrent = i === 11;
+                      return (
+                        <text
+                          key={i}
+                          x={x}
+                          y="152"
+                          fill={isCurrent ? "#3C0713" : "#94a3b8"}
+                          fontSize="9"
+                          fontFamily="sans-serif"
+                          textAnchor="middle"
+                          fontWeight={isCurrent ? "bold" : "medium"}
+                        >
+                          {item.name}
+                        </text>
+                      );
+                    })}
                   </svg>
                 </div>
               </div>
@@ -2002,11 +2138,12 @@ export function ApplicantsPage() {
   const [filteredApps, setFilteredApps] = useState([]);
   const [selectedApp, setSelectedApp] = useState(null);
   const [statusFilter, setStatusFilter] = useState("All");
+  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
 
-
+  const tabs = ["All", "Pending", "Reviewed", "Accepted", "Rejected"];
 
   useEffect(() => {
     let cancelled = false;
@@ -2042,6 +2179,7 @@ export function ApplicantsPage() {
         const apps = await listApplications({ announcement: selectedAnnouncementId });
         if (cancelled) return;
         setApplications(apps);
+        // Automatically select the first candidate in the fetched list
         setSelectedApp(apps.length > 0 ? apps[0] : null);
       } catch (err) {
         if (cancelled) return;
@@ -2057,20 +2195,33 @@ export function ApplicantsPage() {
   }, [selectedAnnouncementId]);
 
   useEffect(() => {
-    if (statusFilter === "All") {
-      setFilteredApps(applications);
-    } else {
-      setFilteredApps(applications.filter(app => app.status === statusFilter.toUpperCase()));
+    let filtered = applications;
+
+    // Filter by status
+    if (statusFilter !== "All") {
+      filtered = filtered.filter(app => app.status === statusFilter.toUpperCase());
     }
-  }, [applications, statusFilter]);
+
+    // Filter by search term
+    if (searchTerm.trim() !== "") {
+      const query = searchTerm.toLowerCase();
+      filtered = filtered.filter(app => 
+        (app.applicant_name && app.applicant_name.toLowerCase().includes(query)) ||
+        (app.applicant_title && app.applicant_title.toLowerCase().includes(query)) ||
+        (app.applicant_skills && app.applicant_skills.some(s => s.toLowerCase().includes(query)))
+      );
+    }
+
+    setFilteredApps(filtered);
+  }, [applications, statusFilter, searchTerm]);
 
   const handleStatusUpdate = async (appId, actionFn) => {
     setActionLoading(true);
+    setError("");
     try {
       const updated = await actionFn(appId);
       setApplications(prev => prev.map(a => a.id === appId ? { ...a, status: updated.status } : a));
       setSelectedApp(prev => prev && prev.id === appId ? { ...prev, status: updated.status } : prev);
-      setError("");
     } catch (err) {
       setError(parseApiError(err, "Status transition failed. Be sure you are moving to an allowed next state."));
     } finally {
@@ -2081,47 +2232,231 @@ export function ApplicantsPage() {
   const getStatusBadge = (status) => {
     switch (status) {
       case "PENDING":
-        return "bg-amber-150/15 text-amber-700 border-amber-200/40";
+        return "bg-amber-50 text-amber-700 border-amber-200/50";
       case "REVIEWED":
-        return "bg-blue-150/15 text-blue-700 border-blue-200/40";
+        return "bg-blue-50 text-blue-700 border-blue-200/50";
       case "ACCEPTED":
-        return "bg-emerald-150/15 text-emerald-700 border-emerald-200/40";
+        return "bg-emerald-50 text-emerald-700 border-emerald-200/50";
       case "REJECTED":
-        return "bg-rose-150/15 text-rose-700 border-rose-200/40";
+        return "bg-rose-50 text-rose-700 border-rose-200/50";
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+        return "bg-gray-50 text-gray-700 border-gray-200/50";
     }
   };
 
+  const getCount = (status) => {
+    if (status === "All") return applications.length;
+    return applications.filter(a => a.status === status.toUpperCase()).length;
+  };
+
+  const renderEmptyState = () => {
+    const hasApps = applications.length > 0;
+    return (
+      <div className="h-full flex flex-col justify-center items-center text-center p-8 bg-slate-50/20">
+        <div className="w-16 h-16 rounded-full bg-[#3C0713]/5 border border-dashed border-[#3C0713]/20 flex items-center justify-center mb-5 shadow-sm relative overflow-hidden animate-pulse">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3C0713" strokeWidth="1.5" className="opacity-80">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+        </div>
+        <h3 className="font-serif text-lg font-bold text-gray-800 mb-1.5">Candidate Dossier Portal</h3>
+        <p className="text-xs text-gray-400 max-w-sm leading-relaxed mb-6 font-medium">
+          {hasApps 
+            ? "Select a candidate profile from the list to review their details, professional bio, and status credentials."
+            : "No candidates have applied to this job listing yet. Share the listing link to attract talent!"}
+        </p>
+        
+        {hasApps && (
+          <div className="grid grid-cols-3 gap-4 w-full max-w-md mt-2">
+            <div className="bg-white p-3 rounded-2xl border border-gray-150/40 shadow-sm text-center">
+              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-1">Pending</span>
+              <span className="font-serif text-base font-bold text-amber-600">{applications.filter(a => a.status === "PENDING").length}</span>
+            </div>
+            <div className="bg-white p-3 rounded-2xl border border-gray-150/40 shadow-sm text-center">
+              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-1">Reviewed</span>
+              <span className="font-serif text-base font-bold text-blue-600">{applications.filter(a => a.status === "REVIEWED").length}</span>
+            </div>
+            <div className="bg-white p-3 rounded-2xl border border-gray-150/40 shadow-sm text-center">
+              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-1">Accepted</span>
+              <span className="font-serif text-base font-bold text-emerald-600">{applications.filter(a => a.status === "ACCEPTED").length}</span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderDetailView = () => {
+    const initials = selectedApp.applicant_name ? selectedApp.applicant_name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "?";
+    const isPending = selectedApp.status === "PENDING";
+    const isReviewed = selectedApp.status === "REVIEWED";
+    const isAccepted = selectedApp.status === "ACCEPTED";
+    const isRejected = selectedApp.status === "REJECTED";
+
+    return (
+      <div className="flex flex-col h-full bg-white overflow-hidden p-6 md:p-8 space-y-6">
+        
+        {/* Profile Card Header */}
+        <div className="flex items-center justify-between gap-4 pb-5 border-b border-gray-100 flex-shrink-0">
+          <div className="flex gap-4 items-center min-w-0">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#3C0713] to-[#881337] text-white font-serif font-black text-sm flex items-center justify-center shadow-sm flex-shrink-0">
+              {initials}
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-lg font-bold text-gray-900 leading-tight truncate">{selectedApp.applicant_name}</h2>
+              <p className="text-xs text-gray-500 truncate mt-0.5">{selectedApp.applicant_title || "Professional Candidate"}</p>
+              <p className="text-[10px] text-gray-400 mt-1 font-medium font-sans">
+                📍 {selectedApp.applicant_wilaya_display || WILAYA_DISPLAY[selectedApp.applicant_wilaya] || selectedApp.applicant_wilaya} · 💼 {selectedApp.applicant_years_exp} Yrs Experience
+              </p>
+            </div>
+          </div>
+          <span className={`text-[8px] px-2.5 py-0.5 rounded-full font-bold border uppercase tracking-wider font-sans self-start ${getStatusBadge(selectedApp.status)}`}>
+            {selectedApp.status}
+          </span>
+        </div>
+
+        {/* Status Actions */}
+        <div className="bg-slate-50 p-4 rounded-2xl border border-gray-150/40 flex flex-col sm:flex-row justify-between items-center gap-3 flex-shrink-0">
+          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Recruitment Status</span>
+          <div className="flex gap-2">
+            {isPending && (
+              <button
+                disabled={actionLoading}
+                onClick={() => handleStatusUpdate(selectedApp.id, reviewApplication)}
+                className="px-4 py-2 bg-[#3C0713] hover:bg-[#52091a] text-white rounded-xl text-[10px] font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50 active:scale-95"
+              >
+                Mark Reviewed
+              </button>
+            )}
+            
+            {isReviewed && (
+              <>
+                <button
+                  disabled={actionLoading}
+                  onClick={() => handleStatusUpdate(selectedApp.id, acceptApplication)}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50 active:scale-95"
+                >
+                  Accept Candidate
+                </button>
+                <button
+                  disabled={actionLoading}
+                  onClick={() => handleStatusUpdate(selectedApp.id, rejectApplication)}
+                  className="px-4 py-2 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-xl text-[10px] font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50 active:scale-95"
+                >
+                  Reject Candidate
+                </button>
+              </>
+            )}
+            
+            {isAccepted && (
+              <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
+                ✓ Ready for Interview
+              </span>
+            )}
+            
+            {isRejected && (
+              <span className="text-[10px] font-bold text-rose-600 flex items-center gap-1">
+                ✕ Application Closed
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Cover Letter */}
+        <div className="flex-grow overflow-y-auto space-y-2 pr-1">
+          <h4 className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Candidate Cover Letter</h4>
+          <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-line bg-slate-50/50 p-4 rounded-2xl border border-gray-150/30">
+            {selectedApp.cover_letter || "No cover letter was submitted for this role."}
+          </p>
+        </div>
+
+        {/* Resume CV Section */}
+        <div className="pt-4 border-t border-gray-100 flex-shrink-0">
+          {selectedApp.resume_file ? (
+            <div className="flex items-center justify-between bg-slate-50/50 p-3.5 rounded-2xl border border-gray-150/40">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-[#3C0713]/5 text-[#3C0713] flex items-center justify-center shadow-inner">
+                  📄
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold text-gray-700">Resume Dossier</p>
+                  <p className="text-[9px] text-gray-400 font-medium">Uploaded PDF Document</p>
+                </div>
+              </div>
+              
+              <a
+                href={selectedApp.resume_file}
+                target="_blank"
+                rel="noreferrer"
+                className="px-4 py-2 bg-[#3C0713] hover:bg-[#52091a] text-white rounded-xl text-[10px] font-bold transition-all shadow-sm cursor-pointer flex items-center gap-1 active:scale-95"
+              >
+                View CV File
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
+              </a>
+            </div>
+          ) : (
+            <div className="p-3.5 bg-slate-50 border border-gray-150/40 rounded-2xl text-[10px] text-gray-400 italic text-center font-medium">
+              No custom CV file was uploaded by this candidate.
+            </div>
+          )}
+        </div>
+
+      </div>
+    );
+  };
+
   return (
-    <div className="space-y-6 animate-fade-in pb-12">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="space-y-6 animate-fade-in pb-12 h-[calc(100vh-140px)] min-h-[700px] flex flex-col">
+      {/* Top Header Section */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 flex-shrink-0">
         <div>
-          <h1 className="font-serif text-3xl font-normal mb-1">Applications Panel</h1>
-          <p className="text-sm text-gray-400">Review candidates, read cover letters, and track candidate statuses.</p>
+          <h1 className="font-serif text-3xl font-normal mb-1">Applications Dossier</h1>
+          <p className="text-sm text-gray-400">Review candidates, examine cover letters, and manage your Algerian talent recruitment pipeline.</p>
         </div>
       </div>
 
       {announcements.length === 0 ? (
         loading ? (
-          <div className="linkio-panel p-12 text-center text-gray-400">Loading your listings...</div>
+          <div className="bg-white rounded-3xl p-12 text-center text-gray-400 border border-gray-150/50 shadow-sm animate-pulse flex-grow flex items-center justify-center">
+            Loading your listings...
+          </div>
         ) : (
-          <div className="linkio-panel p-12 text-center text-gray-400">
+          <div className="bg-white rounded-3xl p-12 text-center text-gray-400 border border-gray-150/50 shadow-sm flex-grow flex items-center justify-center">
             You haven't posted any announcements yet. Please check back later.
           </div>
         )
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          <div className="lg:col-span-4 space-y-4">
-            <div className="linkio-panel p-4 flex flex-col gap-2">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Select Announcement</label>
+        <div className="flex flex-col gap-6 flex-grow overflow-hidden">
+          
+          {/* Active Job Selector Card */}
+          <div className="bg-white rounded-3xl p-5 border border-gray-150/50 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col md:flex-row md:items-center justify-between gap-4 flex-shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-[#3C0713]/10 text-[#3C0713] flex items-center justify-center shadow-sm">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                </svg>
+              </div>
+              <div>
+                <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-0.5">Selected Position</label>
+                <h3 className="font-serif text-base font-bold text-gray-900">Active Job Pipeline</h3>
+              </div>
+            </div>
+            
+            <div className="relative w-full md:w-80">
               <select
                 value={selectedAnnouncementId}
                 onChange={(e) => {
                   setSelectedAnnouncementId(e.target.value);
                   setStatusFilter("All");
+                  setSearchTerm("");
                 }}
-                className="w-full px-3 py-2.5 rounded-xl bg-gray-50 text-sm outline-none border border-gray-200 focus:border-[#3C0713] transition-colors cursor-pointer"
+                className="w-full pl-4 pr-10 py-2.5 rounded-2xl bg-slate-50/50 hover:bg-slate-50 text-sm font-semibold text-gray-800 outline-none border border-gray-150 focus:border-[#3C0713] transition-all cursor-pointer appearance-none shadow-inner"
               >
                 {announcements.map((a) => (
                   <option key={a.id} value={a.id}>
@@ -2129,189 +2464,144 @@ export function ApplicantsPage() {
                   </option>
                 ))}
               </select>
-            </div>
-
-            <div className="linkio-panel p-4 flex flex-col h-[520px] overflow-hidden">
-              <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
-                <h3 className="font-semibold text-gray-800 text-sm">Candidates ({filteredApps.length})</h3>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-2.5 py-1 rounded-full bg-cream border border-gray-200 text-xs font-medium outline-none cursor-pointer"
-                >
-                  {["All", "Pending", "Reviewed", "Accepted", "Rejected"].map(s => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
+              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
               </div>
-
-              {loading ? (
-                <div className="text-center text-xs text-gray-300 py-12 flex-grow flex items-center justify-center">Loading applications...</div>
-              ) : filteredApps.length === 0 ? (
-                <div className="text-center text-xs text-gray-300 py-12 flex-grow flex items-center justify-center">No applications found.</div>
-              ) : (
-                <div className="space-y-2 overflow-y-auto flex-grow pr-1">
-                  {filteredApps.map((app) => {
-                    const isSelected = selectedApp?.id === app.id;
-                    const initials = app.applicant_name ? app.applicant_name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "?";
-                    return (
-                      <div
-                        key={app.id}
-                        onClick={() => setSelectedApp(app)}
-                        className={`p-3 rounded-2xl border transition-all duration-200 cursor-pointer flex gap-3 items-center hover:scale-[1.01] ${
-                          isSelected
-                            ? "bg-[#3C0713]/5 border-[#3C0713]/40 shadow-sm"
-                            : "bg-white border-gray-100 hover:border-gray-200"
-                        }`}
-                      >
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#3C0713] to-[#5c0b1e] text-white font-serif font-bold text-xs flex items-center justify-center shadow-sm">
-                          {initials}
-                        </div>
-                        <div className="flex-grow min-w-0">
-                          <p className="text-xs font-semibold text-gray-900 truncate">{app.applicant_name}</p>
-                          <p className="text-[10px] text-gray-400 truncate">{app.applicant_title || "Candidate"}</p>
-                        </div>
-                        <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                          <span className={`text-[8px] px-2 py-0.5 rounded-full font-bold border uppercase ${getStatusBadge(app.status)}`}>
-                            {app.status}
-                          </span>
-                          <span className="text-[8px] text-gray-300">{new Date(app.created_at).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
             </div>
           </div>
 
-          <div className="lg:col-span-8">
-            {selectedApp ? (
-              <div className="linkio-panel p-6 min-h-[640px] flex flex-col justify-between relative overflow-hidden">
-                <div>
-                  {error && (
-                    <div className="bg-red-50 border border-red-150 text-red-700 text-xs px-4 py-2.5 rounded-xl mb-4 flex justify-between items-center animate-fade-in">
-                      <span>{error}</span>
-                      <button onClick={() => setError("")} className="font-bold cursor-pointer hover:text-red-900 transition-colors">×</button>
-                    </div>
-                  )}
+          {/* Error Banner */}
+          {error && (
+            <div className="bg-red-50 border border-red-150 text-red-700 text-xs px-4 py-2.5 rounded-2xl flex justify-between items-center animate-fade-in shadow-sm flex-shrink-0">
+              <span>{error}</span>
+              <button onClick={() => setError("")} className="font-bold cursor-pointer hover:text-red-900 transition-colors text-lg">×</button>
+            </div>
+          )}
 
-                  <div className="flex flex-col md:flex-row justify-between items-start gap-4 pb-6 border-b border-gray-100 mb-6">
-                    <div className="flex gap-4 items-center">
-                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#3C0713] to-[#5c0b1e] text-white font-serif font-black text-lg flex items-center justify-center shadow-md">
-                        {selectedApp.applicant_name ? selectedApp.applicant_name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "?"}
-                      </div>
-                      <div>
-                        <h2 className="font-serif text-xl font-bold text-gray-900 leading-tight">{selectedApp.applicant_name}</h2>
-                        <p className="text-sm font-medium text-[#3C0713]">{selectedApp.applicant_title || "Candidate"}</p>
-                        <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-gray-400 mt-1 font-sans">
-                          <span>📍 {selectedApp.applicant_wilaya_display || WILAYA_DISPLAY[selectedApp.applicant_wilaya] || selectedApp.applicant_wilaya || "Algeria"}</span>
-                          <span>·</span>
-                          <span>💼 {selectedApp.applicant_years_exp} yrs experience</span>
-                        </div>
-                      </div>
+          {/* Core Dashboard: Split-Screen Layout */}
+          {loading ? (
+            <div className="bg-white rounded-3xl p-12 text-center text-gray-400 border border-gray-150/50 shadow-sm animate-pulse flex-grow flex items-center justify-center">
+              Loading pipeline data...
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow overflow-hidden items-stretch">
+              
+              {/* Left Column: Candidate Roster */}
+              <div className="lg:col-span-5 flex flex-col bg-white rounded-3xl border border-gray-150/50 shadow-sm overflow-hidden min-h-[480px]">
+                
+                {/* Search & Tabs Header Bar */}
+                <div className="p-4 bg-slate-50/40 border-b border-gray-100 space-y-3.5 flex-shrink-0">
+                  
+                  {/* Search Box */}
+                  <div className="relative w-full">
+                    <input
+                      type="text"
+                      placeholder="Search by candidate name or skills..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-9 pr-8 py-2 text-xs rounded-xl bg-slate-50/80 hover:bg-slate-50 text-gray-800 outline-none border border-gray-150 focus:border-[#3C0713] focus:bg-white transition-all shadow-inner"
+                    />
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                      </svg>
                     </div>
-
-                    <div className="flex gap-2 flex-wrap items-center">
-                      {selectedApp.status === "PENDING" && (
-                        <button
-                          disabled={actionLoading}
-                          onClick={() => handleStatusUpdate(selectedApp.id, reviewApplication)}
-                          className="px-4 py-2 border border-[#3C0713] text-[#3C0713] rounded-full text-xs font-bold hover:bg-[#3C0713]/5 transition-all cursor-pointer disabled:opacity-60 shadow-sm"
-                        >
-                          Mark Reviewed
-                        </button>
-                      )}
-                      {selectedApp.status === "REVIEWED" && (
-                        <>
-                          <button
-                            disabled={actionLoading}
-                            onClick={() => handleStatusUpdate(selectedApp.id, acceptApplication)}
-                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full text-xs font-bold transition-all shadow-md cursor-pointer disabled:opacity-60"
-                          >
-                            Accept Candidate
-                          </button>
-                          <button
-                            disabled={actionLoading}
-                            onClick={() => handleStatusUpdate(selectedApp.id, rejectApplication)}
-                            className="px-4 py-2 border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-full text-xs font-bold transition-all cursor-pointer disabled:opacity-60 shadow-sm"
-                          >
-                            Reject Candidate
-                          </button>
-                        </>
-                      )}
-                      {selectedApp.status === "ACCEPTED" && (
-                        <span className="px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold uppercase tracking-wide">
-                          ✓ Accepted Candidate
-                        </span>
-                      )}
-                      {selectedApp.status === "REJECTED" && (
-                        <span className="px-4 py-2 bg-rose-50 text-rose-700 border border-rose-200 rounded-full text-xs font-bold uppercase tracking-wide">
-                          ✕ Rejected
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {selectedApp.applicant_skills && selectedApp.applicant_skills.length > 0 && (
-                    <div className="mb-6">
-                      <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2.5">Candidate Skills</h4>
-                      <div className="flex flex-wrap gap-1.5">
-                        {selectedApp.applicant_skills.map((skill) => (
-                          <span key={skill} className="bg-slate-100 text-gray-700 text-[10px] font-semibold px-2.5 py-0.5 rounded-full border border-slate-200">
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="mb-6">
-                    <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2.5">Cover Letter</h4>
-                    <div className="bg-slate-50 border-l-4 border-[#3C0713]/40 p-5 rounded-r-2xl leading-relaxed text-sm text-gray-600 font-serif italic">
-                      "{selectedApp.cover_letter || "No cover letter provided."}"
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2.5">Attached Resume</h4>
-                    {selectedApp.resume_file ? (
-                      <a
-                        href={selectedApp.resume_file}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2.5 border border-[#3C0713] hover:bg-[#3C0713]/5 text-[#3C0713] rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer"
+                    {searchTerm && (
+                      <button
+                        onClick={() => setSearchTerm("")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors text-xs"
                       >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                          <polyline points="7 10 12 15 17 10" />
-                          <line x1="12" y1="15" x2="12" y2="3" />
-                        </svg>
-                        Download Candidate Resume (PDF)
-                      </a>
-                    ) : (
-                      <p className="text-xs text-gray-400 font-sans italic">No custom resume file uploaded for this application.</p>
+                        ✕
+                      </button>
                     )}
                   </div>
+
+                  {/* Horizontal Scrollable Tabs */}
+                  <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                    {tabs.map(tab => {
+                      const isActive = statusFilter === tab;
+                      const count = getCount(tab);
+                      return (
+                        <button
+                          key={tab}
+                          onClick={() => setStatusFilter(tab)}
+                          className={`text-[9px] font-bold px-2.5 py-1.5 rounded-full transition-all duration-200 cursor-pointer flex-shrink-0 flex items-center gap-1 ${
+                            isActive
+                              ? "bg-[#3C0713] text-white shadow-sm"
+                              : "bg-white text-gray-500 hover:bg-slate-100 hover:text-gray-800 border border-gray-150/40"
+                          }`}
+                        >
+                          <span>{tab}</span>
+                          <span className={`px-1 rounded-full text-[8px] font-sans font-bold ${
+                            isActive
+                              ? "bg-white/20 text-white"
+                              : "bg-gray-150/80 text-gray-600"
+                          }`}>
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
                 </div>
 
-                <div className="mt-8 border-t border-gray-100 pt-4 flex justify-between items-center text-[10px] text-gray-400 font-mono">
-                  <span>APPLICATION ID: {selectedApp.id}</span>
-                  <span>APPLIED ON: {new Date(selectedApp.created_at).toLocaleString()}</span>
+                {/* Candidate Scrolling Roster */}
+                <div className="flex-grow overflow-y-auto p-4 space-y-3">
+                  {filteredApps.length === 0 ? (
+                    <div className="h-full flex flex-col justify-center items-center py-12 text-center text-gray-400 italic text-[11px] font-medium">
+                      <span>✕</span> No applications match the selection.
+                    </div>
+                  ) : (
+                    filteredApps.map(app => {
+                      const isSelected = selectedApp?.id === app.id;
+                      return (
+                        <div
+                          key={app.id}
+                          onClick={() => setSelectedApp(app)}
+                          className={`py-3 px-3 transition-all duration-200 cursor-pointer flex justify-between items-center border-b border-gray-100/50 last:border-0 rounded-xl ${
+                            isSelected
+                              ? "bg-[#3C0713]/5 text-[#3C0713]"
+                              : "hover:bg-slate-50/50 text-gray-800"
+                          }`}
+                        >
+                          <div className="min-w-0 flex-grow pr-3">
+                            <h4 className={`text-[11px] font-bold truncate transition-colors ${isSelected ? "text-[#3C0713]" : "text-gray-900"}`}>
+                              {app.applicant_name}
+                            </h4>
+                            <p className="text-[9px] text-gray-400 font-medium truncate mt-0.5">
+                              {app.applicant_title || "Candidate"} · {app.applicant_years_exp} Yrs Exp
+                            </p>
+                          </div>
+                          
+                          {/* Minimal status dot indicator */}
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <span className={`w-1.5 h-1.5 rounded-full ${
+                              app.status === "PENDING" ? "bg-amber-400" :
+                              app.status === "REVIEWED" ? "bg-blue-400" :
+                              app.status === "ACCEPTED" ? "bg-emerald-400" : "bg-rose-400"
+                            }`} title={app.status} />
+                            <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider font-sans">{app.status}</span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
+
               </div>
-            ) : (
-              <div className="linkio-panel p-6 min-h-[640px] flex flex-col justify-center items-center text-center">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="text-gray-300 mb-4 animate-pulse">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
-                <p className="text-gray-400 text-sm">Select a candidate on the left to review their application credentials.</p>
+
+              {/* Right Column: Detail Dossier */}
+              <div className="lg:col-span-7 bg-white rounded-3xl border border-gray-150/50 shadow-sm overflow-hidden flex flex-col min-h-[480px]">
+                {selectedApp ? renderDetailView() : renderEmptyState()}
               </div>
-            )}
-          </div>
+
+            </div>
+          )}
+
         </div>
       )}
     </div>

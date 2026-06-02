@@ -1,1 +1,0 @@
-export { PendingVerificationPage as default } from "./OnboardingPages";

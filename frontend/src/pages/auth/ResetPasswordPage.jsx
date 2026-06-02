@@ -78,6 +78,7 @@ export default function ResetPasswordPage() {
   const fromSettings = location.state?.fromSettings === true && !tokenFromEmail;
   const returnTo = location.state?.returnTo;
   const isSetPassword = location.state?.isSetPassword === true;
+  const portal = location.state?.portal;
 
   const [tokenValid, setTokenValid] = useState(fromSettings ? true : null);
   const [tokenError, setTokenError] = useState("");
@@ -110,11 +111,11 @@ export default function ResetPasswordPage() {
   );
 
   const passwordsMatch = password.length > 0 && password === confirm;
+  const isProfessional = fromSettings && portal === "professional";
   const canSubmitSettings =
     fromSettings &&
     (isSetPassword ? true : currentPassword.length > 0) &&
-    passwordsMatch &&
-    requirements.slice(0, 3).every((r) => r.met);
+    (isProfessional ? password.length > 0 : (passwordsMatch && requirements.slice(0, 3).every((r) => r.met)));
   const canSubmitReset =
     !fromSettings && passwordsMatch && requirements.slice(0, 3).every((r) => r.met);
   const canSubmit = fromSettings ? canSubmitSettings : canSubmitReset;
@@ -184,10 +185,12 @@ export default function ResetPasswordPage() {
         />
       }
     >
-      <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center mb-6 border border-green-100">
+      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 border ${
+        portal === "professional" ? "bg-blue-50 border-blue-100" : "bg-green-50 border-green-100"
+      }`}>
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
-          <rect x="5" y="11" width="14" height="10" rx="2" stroke="#16a34a" strokeWidth="1.5" />
-          <path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="#16a34a" strokeWidth="1.5" strokeLinecap="round" />
+          <rect x="5" y="11" width="14" height="10" rx="2" stroke={portal === "professional" ? "#0B1E36" : "#16a34a"} strokeWidth="1.5" />
+          <path d="M8 11V8a4 4 0 0 1 8 0v3" stroke={portal === "professional" ? "#0B1E36" : "#16a34a"} strokeWidth="1.5" strokeLinecap="round" />
         </svg>
       </div>
 
@@ -209,32 +212,34 @@ export default function ResetPasswordPage() {
         {fromSettings && !isSetPassword ? (
           <PasswordField label="Current Password" value={currentPassword} onChange={setCurrentPassword} />
         ) : null}
-        <PasswordField label="New Password" value={password} onChange={setPassword} />
-        <StrengthMeter password={password} />
+         <PasswordField label="New Password" value={password} onChange={setPassword} />
+        {portal === "professional" ? null : <StrengthMeter password={password} />}
 
         <PasswordField
           label="Confirm New Password"
           value={confirm}
           onChange={setConfirm}
-          showMatch={passwordsMatch}
+          showMatch={portal === "professional" ? false : passwordsMatch}
         />
 
-        <div className="bg-gray-50 rounded-xl p-4 mb-6">
-          <p className="text-xs font-semibold text-gray-700 mb-3">Password requirements</p>
-          <ul className="space-y-2">
-            {requirements.map((req) => (
-              <li key={req.label} className="flex items-center gap-2 text-sm text-gray-600">
-                <span
-                  className={`w-4 h-4 rounded-full border flex items-center justify-center text-[10px] flex-shrink-0
-                    ${req.met ? "bg-green-500 border-green-500 text-white" : "border-gray-300 text-transparent"}`}
-                >
-                  ✓
-                </span>
-                {req.label}
-              </li>
-            ))}
-          </ul>
-        </div>
+        {portal === "professional" ? null : (
+          <div className="bg-gray-50 rounded-xl p-4 mb-6">
+            <p className="text-xs font-semibold text-gray-700 mb-3">Password requirements</p>
+            <ul className="space-y-2">
+              {requirements.map((req) => (
+                <li key={req.label} className="flex items-center gap-2 text-sm text-gray-600">
+                  <span
+                    className={`w-4 h-4 rounded-full border flex items-center justify-center text-[10px] flex-shrink-0
+                      ${req.met ? "bg-green-500 border-green-500 text-white" : "border-gray-300 text-transparent"}`}
+                  >
+                    ✓
+                  </span>
+                  {req.label}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {submitError && (
           <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-4">
@@ -242,7 +247,7 @@ export default function ResetPasswordPage() {
           </p>
         )}
 
-        <GradientButton type="submit" disabled={!canSubmit || submitting}>
+        <GradientButton type="submit" disabled={!canSubmit || submitting} className={portal === "professional" ? "bg-[#0B1E36] hover:bg-[#132c4d]" : ""}>
           {submitting ? "Processing…" : (fromSettings && isSetPassword ? "Set Password" : "Reset Password")}
         </GradientButton>
       </form>

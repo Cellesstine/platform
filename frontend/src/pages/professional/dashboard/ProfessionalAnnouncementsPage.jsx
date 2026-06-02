@@ -1,14 +1,147 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../../services/api";
 import { INDUSTRY_OPTIONS, JOB_TYPE_OPTIONS } from "../../../constants/apiChoices";
 import { parseApiError } from "../../../services/auth";
+
+const WILAYA_CHOICES = [
+  { value: "adrar", label: "Adrar" },
+  { value: "chlef", label: "Chlef" },
+  { value: "laghouat", label: "Laghouat" },
+  { value: "oum_el_bouaghi", label: "Oum El Bouaghi" },
+  { value: "batna", label: "Batna" },
+  { value: "bejaia", label: "Béjaïa" },
+  { value: "biskra", label: "Biskra" },
+  { value: "bechar", label: "Béchar" },
+  { value: "blida", label: "Blida" },
+  { value: "bouira", label: "Bouira" },
+  { value: "tamanrasset", label: "Tamanrasset" },
+  { value: "tebessa", label: "Tébessa" },
+  { value: "tlemcen", label: "Tlemcen" },
+  { value: "tiaret", label: "Tiaret" },
+  { value: "tizi_ouzou", label: "Tizi Ouzou" },
+  { value: "alger", label: "Alger" },
+  { value: "djelfa", label: "Djelfa" },
+  { value: "jijel", label: "Jijel" },
+  { value: "setif", label: "Sétif" },
+  { value: "saida", label: "Saïda" },
+  { value: "skikda", label: "Skikda" },
+  { value: "sidi_bel_abbes", label: "Sidi Bel Abbès" },
+  { value: "annaba", label: "Annaba" },
+  { value: "guelma", label: "Guelma" },
+  { value: "constantine", label: "Constantine" },
+  { value: "medea", label: "Médéa" },
+  { value: "mostaganem", label: "Mostaganem" },
+  { value: "msila", label: "M'Sila" },
+  { value: "mascara", label: "Mascara" },
+  { value: "ouargla", label: "Ouargla" },
+  { value: "oran", label: "Oran" },
+  { value: "el_bayadh", label: "El Bayadh" },
+  { value: "illizi", label: "Illizi" },
+  { value: "bordj_bou_arreridj", label: "Bordj Bou Arréridj" },
+  { value: "boumerdes", label: "Boumerdès" },
+  { value: "el_tarf", label: "El Tarf" },
+  { value: "tindouf", label: "Tindouf" },
+  { value: "tissemsilt", label: "Tissemsilt" },
+  { value: "el_oued", label: "El Oued" },
+  { value: "khenchela", label: "Khenchela" },
+  { value: "souk_ahras", label: "Souk Ahras" },
+  { value: "tipaza", label: "Tipaza" },
+  { value: "mila", label: "Mila" },
+  { value: "ain_defla", label: "Aïn Defla" },
+  { value: "naama", label: "Naâma" },
+  { value: "ain_temouchent", label: "Aïn Témouchent" },
+  { value: "ghardaia", label: "Ghardaïa" },
+  { value: "relizane", label: "Relizane" }
+];
+
+function Dropdown({ value, onChange, options, placeholder = "Select option" }) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const clickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", clickOutside);
+    return () => document.removeEventListener("mousedown", clickOutside);
+  }, []);
+
+  const selectedOpt = options.find((o) => o.value === value);
+  const displayLabel = selectedOpt ? selectedOpt.label : placeholder;
+
+  return (
+    <div className="relative min-w-[160px] flex-shrink-0" ref={containerRef}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full px-5 py-3 rounded-2xl bg-white border border-gray-100 text-xs font-semibold text-gray-700 shadow-sm flex items-center justify-between gap-3 hover:bg-slate-50 hover:border-gray-200 active:scale-95 transition-all cursor-pointer text-left"
+      >
+        <span className="truncate">{displayLabel}</span>
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={`text-gray-400 transition-transform duration-200 flex-shrink-0 ${open ? "rotate-180" : ""}`}
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute z-30 left-0 right-0 mt-2 bg-white border border-gray-150 rounded-2xl shadow-xl max-h-60 overflow-y-auto py-1.5 animate-slide-up">
+          {options.map((opt) => {
+            const active = opt.value === value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
+                className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors flex items-center justify-between
+                  ${active ? "bg-[#0B1E36] text-white" : "text-gray-700 hover:bg-slate-50"}`}
+              >
+                <span>{opt.label}</span>
+                {active && <span className="text-[10px] font-bold">✓</span>}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ProfessionalAnnouncementsPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("ALL");
   const [type, setType] = useState("ALL");
+  const [wilayaFilter, setWilayaFilter] = useState("ALL");
+
+  const categoryOptions = useMemo(() => [
+    { value: "ALL", label: "All categories" },
+    ...INDUSTRY_OPTIONS
+  ], []);
+
+  const typeOptions = useMemo(() => [
+    { value: "ALL", label: "All types" },
+    ...JOB_TYPE_OPTIONS
+  ], []);
+
+  const wilayaOptions = useMemo(() => [
+    { value: "ALL", label: "All Wilayas" },
+    ...WILAYA_CHOICES
+  ], []);
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -22,6 +155,7 @@ export default function ProfessionalAnnouncementsPage() {
             status: "ACTIVE",
             search: search || undefined,
             industry: category !== "ALL" ? category : undefined,
+            wilaya: wilayaFilter !== "ALL" ? wilayaFilter : undefined,
           },
         });
         if (cancelled) return;
@@ -37,7 +171,7 @@ export default function ProfessionalAnnouncementsPage() {
     return () => {
       cancelled = true;
     };
-  }, [search, category]);
+  }, [search, category, wilayaFilter]);
 
   const filtered = useMemo(() => {
     if (type === "ALL") return jobs;
@@ -59,30 +193,24 @@ export default function ProfessionalAnnouncementsPage() {
             className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-gray-100 text-sm outline-none focus:border-navy shadow-sm"
           />
         </div>
-        <select
+        <Dropdown
           value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="px-4 py-3 rounded-xl bg-white border border-gray-100 text-sm outline-none shadow-sm min-w-[160px]"
-        >
-          <option value="ALL">All categories</option>
-          {INDUSTRY_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-        <select
+          onChange={setCategory}
+          options={categoryOptions}
+          placeholder="All categories"
+        />
+        <Dropdown
           value={type}
-          onChange={(e) => setType(e.target.value)}
-          className="px-4 py-3 rounded-xl bg-white border border-gray-100 text-sm outline-none shadow-sm min-w-[140px]"
-        >
-          <option value="ALL">All types</option>
-          {JOB_TYPE_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+          onChange={setType}
+          options={typeOptions}
+          placeholder="All types"
+        />
+        <Dropdown
+          value={wilayaFilter}
+          onChange={setWilayaFilter}
+          options={wilayaOptions}
+          placeholder="All Wilayas"
+        />
       </div>
 
       {loading ? (
@@ -94,7 +222,7 @@ export default function ProfessionalAnnouncementsPage() {
         {filtered.map((job) => (
           <article
             key={job.id}
-            className="bg-white rounded-3xl p-6 border border-gray-150/70 hover:border-[#3C0713]/40 hover:shadow-xl hover:shadow-red-900/5 transition-all duration-300 flex flex-col justify-between group"
+            className="bg-white rounded-3xl p-6 border border-gray-150/70 hover:border-[#0B1E36]/40 hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-300 flex flex-col justify-between group"
           >
             <div>
               {/* Card Header: Avatar & Company Info & Job Type */}
@@ -109,7 +237,7 @@ export default function ProfessionalAnnouncementsPage() {
                   ) : (
                     <div
                       className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-xs font-black shadow-sm"
-                      style={{ background: "linear-gradient(135deg, #3C0713 0%, #5c0b1e 100%)" }}
+                      style={{ background: "linear-gradient(135deg, #0B1E36 0%, #1d3d63 100%)" }}
                     >
                       {(job.enterprise_name || "CO").slice(0, 2).toUpperCase()}
                     </div>
@@ -122,13 +250,13 @@ export default function ProfessionalAnnouncementsPage() {
                   </div>
                 </div>
                 
-                <span className="bg-[#3C0713]/5 text-[#3C0713] text-[9px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider border border-[#3C0713]/10">
+                <span className="bg-[#0B1E36]/5 text-[#0B1E36] text-[9px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider border border-[#0B1E36]/10">
                   {job.job_type_display || job.job_type || "Full Time"}
                 </span>
               </div>
 
               {/* Role Title */}
-              <h2 className="font-serif font-bold text-lg text-gray-900 mb-2 group-hover:text-[#3C0713] transition-colors">
+              <h2 className="font-serif font-bold text-lg text-gray-900 mb-2 group-hover:text-[#0B1E36] transition-colors">
                 {job.role_display || job.role}
               </h2>
 
@@ -142,7 +270,7 @@ export default function ProfessionalAnnouncementsPage() {
               {/* Experience required */}
               {job.experience_required !== undefined && (
                 <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-                  <span>⚡ Experience Required:</span>
+                  <span>Experience Required:</span>
                   <span className="text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md font-sans font-medium lowercase">
                     {job.experience_required} {job.experience_required === 1 ? "year" : "years"}
                   </span>
@@ -155,7 +283,7 @@ export default function ProfessionalAnnouncementsPage() {
                   {job.required_skills.map((skill) => (
                     <span
                       key={skill}
-                      className="bg-red-50 text-[#3C0713] text-[10px] font-semibold px-2.5 py-0.5 rounded-full border border-red-100"
+                      className="bg-blue-50/50 text-[#0B1E36] text-[10px] font-semibold px-2.5 py-0.5 rounded-full border border-blue-100/50"
                     >
                       {skill}
                     </span>
@@ -170,16 +298,12 @@ export default function ProfessionalAnnouncementsPage() {
                 <span className="text-[10px] text-gray-400 font-semibold flex items-center gap-1">
                   {job.deadline ? `Deadline: ${job.deadline}` : "Open recruitment"}
                 </span>
-                <span className="text-[10px] text-emerald-600 font-bold mt-0.5 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  {job.applicant_count || 0} applied
-                </span>
               </div>
               
               <button
                 type="button"
                 onClick={() => navigate(`/professional/dashboard/announcements/${job.id}`)}
-                className="px-5 py-2 bg-[#3C0713] hover:bg-[#5c0b1e] text-white rounded-full text-xs font-bold tracking-wide transition-all shadow-sm shadow-[#3C0713]/10 hover:shadow-md hover:shadow-[#3C0713]/20 cursor-pointer"
+                className="px-5 py-2.5 bg-[#0B1E36] hover:bg-[#132c4d] text-white rounded-full text-xs font-bold tracking-wide transition-all shadow-sm shadow-[#0B1E36]/10 hover:shadow-md hover:shadow-[#0B1E36]/20 cursor-pointer border border-[#0B1E36] active:scale-95"
               >
                 Apply Now →
               </button>

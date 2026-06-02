@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Modal } from "../../components/ui";
 import { goToChangePassword } from "../auth/passwordReset/shared";
 import { deactivateAccount, deleteAccount, logout, changeEmail } from "../../services/accountApi";
 import { clearAuth, getUserEmail, parseApiError } from "../../services/auth";
+import { getMyProfileDetails } from "../../services/profilesApi";
+import { getMediaUrl } from "../../utils/media";
 
 export default function SettingsPage() {
   const navigate = useNavigate();
@@ -18,10 +20,45 @@ export default function SettingsPage() {
   const [newEmail, setNewEmail] = useState("");
   const [emailChangePassword, setEmailChangePassword] = useState("");
   const [emailChangeSuccess, setEmailChangeSuccess] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [profileEmail, setProfileEmail] = useState("");
+  const [verified, setVerified] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchProfile() {
+      try {
+        const data = await getMyProfileDetails();
+        if (cancelled) return;
+        if (data) {
+          if (data.company_name) {
+            setCompanyName(data.company_name);
+          }
+          if (data.avatar) {
+            setAvatarUrl(data.avatar);
+          }
+          if (data.email) {
+            setProfileEmail(data.email);
+          }
+          setVerified(!!data.verified);
+        }
+      } catch (err) {
+        console.error("Failed to fetch profile details:", err);
+      }
+    }
+    fetchProfile();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const userEmail = getUserEmail();
-  const displayName = userEmail?.split("@")[0] || "User";
-  const initials = userEmail ? userEmail.slice(0, 2).toUpperCase() : "BU";
+  const displayEmail = profileEmail || userEmail || "";
+  const displayName = companyName || userEmail?.split("@")[0] || "User";
+  const initials = companyName 
+    ? companyName.split(" ").filter(Boolean).map(n => n[0]).join("").slice(0, 2).toUpperCase()
+    : (userEmail ? userEmail.slice(0, 2).toUpperCase() : "BU");
 
   const handleDeactivate = async () => {
     if (!deactivatePassword) return;
@@ -94,14 +131,31 @@ export default function SettingsPage() {
         {/* User Card Sidebar */}
         <div className="w-full lg:w-72 flex-shrink-0 flex flex-col gap-6">
           <div className="bg-white rounded-3xl p-6 border border-gray-150/50 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center text-center">
-            {/* Initials Avatar with Cherry Red Glow */}
-            <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-[#3C0713] to-[#7f1d1d] text-white flex items-center justify-center text-2xl font-serif font-bold shadow-md relative overflow-hidden mb-4">
-              <div className="absolute inset-0 bg-white/5 opacity-50 blur-[1px]" />
-              <span className="relative z-10">{initials}</span>
+            {/* Initials Avatar with Cherry Red Glow / Company Logo */}
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center shadow-md relative overflow-hidden mb-4 border border-gray-100 ${
+              avatarUrl 
+                ? "bg-white" 
+                : "bg-gradient-to-tr from-[#3C0713] to-[#7f1d1d] text-white text-2xl font-serif font-bold"
+            }`}>
+              {avatarUrl ? (
+                <img src={getMediaUrl(avatarUrl)} alt="Company Logo" className="w-full h-full object-cover" />
+              ) : (
+                <>
+                  <div className="absolute inset-0 bg-white/5 opacity-50 blur-[1px]" />
+                  <span className="relative z-10">{initials}</span>
+                </>
+              )}
             </div>
             
-            <h2 className="font-serif text-xl font-medium text-gray-900 capitalize mb-1">{displayName}</h2>
-            <p className="text-xs text-gray-400 font-medium mb-3">{userEmail}</p>
+            <h2 className="font-serif text-xl font-medium text-gray-900 capitalize mb-1 flex items-center justify-center gap-1.5">
+              {displayName}
+              {verified && (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-[#0095f6] select-none" title="Verified Account">
+                  <path fillRule="evenodd" d="M8.603 3.799A4.49 4.49 0 0112 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 013.498 1.307 4.491 4.491 0 011.307 3.497A4.49 4.49 0 0121.75 12a4.49 4.49 0 01-1.549 3.397 4.491 4.491 0 01-1.307 3.498 4.491 4.491 0 01-3.497 1.307A4.49 4.49 0 0112 21.75a4.49 4.49 0 01-3.397-1.549 4.49 4.49 0 01-3.498-1.307 4.491 4.491 0 01-1.307-3.497A4.49 4.49 0 012.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 011.307-3.497 4.49 4.49 0 013.497-1.307zm7.007 6.387a.75.75 0 00-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clipRule="evenodd" />
+                </svg>
+              )}
+            </h2>
+            <p className="text-xs text-gray-400 font-medium mb-3">{displayEmail}</p>
             <span className="px-3 py-1 bg-slate-100 text-slate-700 text-[10px] font-bold rounded-full uppercase tracking-wider">
               <i>Business</i>
             </span>

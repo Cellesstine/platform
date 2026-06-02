@@ -22,13 +22,15 @@ from .serializers import (
     EnterpriseVerificationSerializer,
     EnterpriseProfileDetailsSerializer,
     ProfessionalListSerializer,
+    IndividualProfileEditSerializer,
+    EnterpriseProfileEditSerializer,
     )
 
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def profileSetup(request):
     if request.method == "GET":
-        professionals = IndividualProfile.objects.all().order_by("-created_at")
+        professionals = IndividualProfile.objects.select_related("user").all().order_by("-created_at")
         serializer = ProfessionalListSerializer(professionals, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 

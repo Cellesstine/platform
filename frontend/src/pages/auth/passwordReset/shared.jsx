@@ -12,6 +12,7 @@ export function goToChangePassword(navigate, portal) {
     state: {
       fromSettings: true,
       returnTo: CHANGE_PASSWORD_RETURN[portal],
+      portal: portal,
     },
   });
 }
@@ -78,13 +79,14 @@ export function PasswordResetStepper({ current }) {
 }
 
 export function GradientButton({ children, onClick, type = "button", disabled = false, className = "" }) {
+  const hasBg = className.includes("bg-");
   return (
     <button
       type={type}
       onClick={onClick}
       disabled={disabled}
       className={`w-full py-3.5 rounded-linkio text-sm font-semibold text-white transition-all
-        bg-[#4c0527] hover:bg-[#330319]
+        ${hasBg ? "" : "bg-[#4c0527] hover:bg-[#330319]"}
         disabled:opacity-40 disabled:cursor-not-allowed ${className}`}
     >
       {children}

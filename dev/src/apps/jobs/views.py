@@ -57,7 +57,7 @@ def announcement_list_create(request):
                 Q(required_skills__name__icontains=search)
             ).distinct()
 
-        serializer = AnnouncementListSerializer(qs, many=True)
+        serializer = AnnouncementListSerializer(qs, many=True, context={"request": request})
         return Response(serializer.data)
 
     if not request.user.is_authenticated:
@@ -125,7 +125,7 @@ def announcement_search(request):
         ).distinct()
 
     results = list(qs)
-    serializer = AnnouncementListSerializer(results, many=True)
+    serializer = AnnouncementListSerializer(results, many=True, context={"request": request})
     return Response({
         "count":   len(results),
         "results": serializer.data,
@@ -142,7 +142,7 @@ def announcement_detail(request, pk):
     )
 
     if request.method == "GET":
-        return Response(AnnouncementDetailSerializer(announcement).data)
+        return Response(AnnouncementDetailSerializer(announcement, context={"request": request}).data)
 
     # Protect write operations
     if not request.user.is_authenticated:
@@ -162,7 +162,7 @@ def announcement_detail(request, pk):
     )
     if serializer.is_valid():
         updated = serializer.save()
-        return Response(AnnouncementDetailSerializer(updated).data)
+        return Response(AnnouncementDetailSerializer(updated, context={"request": request}).data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(["POST"])
@@ -191,7 +191,7 @@ def announcement_publish(request, pk):
         )
 
     announcement.publish()   # delegates to model method — single place to change
-    return Response(AnnouncementDetailSerializer(announcement).data)
+    return Response(AnnouncementDetailSerializer(announcement, context={"request": request}).data)
 
 
 @api_view(["POST"])
@@ -205,15 +205,15 @@ def announcement_close(request, pk):
         )
 
     announcement.close()
-    return Response(AnnouncementDetailSerializer(announcement).data)
+    return Response(AnnouncementDetailSerializer(announcement, context={"request": request}).data)
 
 @api_view(["GET", "POST"])
 def application_list_create(request):
-    print(f"[DEBUG JOBS APPLICATION] Method: {request.method}, Path: {request.path}, User: {request.user}, Auth: {request.META.get('HTTP_AUTHORIZATION')}")
     if request.method == "GET":
         qs = (
             Application.objects
             .select_related("announcement", "announcement__enterprise", "applicant", "applicant__user")
+            .prefetch_related("applicant__skills__skill")
         )
 
         announcement_id = request.query_params.get("announcement")
@@ -227,14 +227,14 @@ def application_list_create(request):
         if st:
             qs = qs.filter(status=st.upper())
 
-        serializer = ApplicationDetailsSerializer(qs.order_by("-created_at"), many=True)
+        serializer = ApplicationDetailsSerializer(qs.order_by("-created_at"), many=True, context={"request": request})
         return Response(serializer.data)
 
     serializer = ApplicationSerializer(data=request.data)
     if serializer.is_valid():
         application = serializer.save()
         return Response(
-            ApplicationDetailsSerializer(application).data,
+            ApplicationDetailsSerializer(application, context={"request": request}).data,
             status=status.HTTP_201_CREATED,
         )
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -249,6 +249,7 @@ def application_search(request):
             "applicant",
             "applicant__user",
         )
+        .prefetch_related("applicant__skills__skill")
     )
 
     q               = request.query_params.get("q")
@@ -272,7 +273,7 @@ def application_search(request):
         ).distinct()
 
     results    = list(qs.order_by("-created_at"))
-    serializer = ApplicationDetailsSerializer(results, many=True)
+    serializer = ApplicationDetailsSerializer(results, many=True, context={"request": request})
     return Response({
         "count":   len(results),
         "results": serializer.data,
@@ -283,12 +284,12 @@ def application_detail(request, pk):
     application = get_object_or_404(
         Application.objects.select_related(
             "announcement", "announcement__enterprise", "applicant"
-        ),
+        ).prefetch_related("applicant__skills__skill"),
         pk=pk,
     )
 
     if request.method == "GET":
-        return Response(ApplicationDetailsSerializer(application).data)
+        return Response(ApplicationDetailsSerializer(application, context={"request": request}).data)
 
     application.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
@@ -304,7 +305,7 @@ def application_reviewed(request, pk):
     )
     if serializer.is_valid():
         application.mark_reviewed()
-        return Response(ApplicationDetailsSerializer(application).data)
+        return Response(ApplicationDetailsSerializer(application, context={"request": request}).data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -320,7 +321,7 @@ def application_accept(request, pk):
     )
     if serializer.is_valid():
         application.accept()
-        return Response(ApplicationDetailsSerializer(application).data)
+        return Response(ApplicationDetailsSerializer(application, context={"request": request}).data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -335,5 +336,5 @@ def application_reject(request, pk):
     )
     if serializer.is_valid():
         application.reject()
-        return Response(ApplicationDetailsSerializer(application).data)
+        return Response(ApplicationDetailsSerializer(application, context={"request": request}).data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

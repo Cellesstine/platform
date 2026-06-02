@@ -162,6 +162,7 @@ class ApplicationSerializer(serializers.ModelSerializer):
 class ApplicationDetailsSerializer(serializers.ModelSerializer):
     announcement_title    = serializers.CharField(source="announcement.role",          read_only=True)
     announcement_company  = serializers.CharField(source="announcement.enterprise.company_name", read_only=True)
+    announcement_company_avatar = serializers.SerializerMethodField()
     applicant_email       = serializers.CharField(source="applicant.user.email",       read_only=True)
     applicant_name        = serializers.SerializerMethodField()
     applicant_title       = serializers.CharField(source="applicant.professional_title", read_only=True, default="")
@@ -174,7 +175,7 @@ class ApplicationDetailsSerializer(serializers.ModelSerializer):
         model  = Application
         fields = [
             "id",
-            "announcement", "announcement_title", "announcement_company",
+            "announcement", "announcement_title", "announcement_company", "announcement_company_avatar",
             "applicant",    "applicant_email",    "applicant_name",
             "applicant_title", "applicant_years_exp", "applicant_wilaya", "applicant_wilaya_display", "applicant_skills",
             "status",
@@ -188,8 +189,16 @@ class ApplicationDetailsSerializer(serializers.ModelSerializer):
 
     def get_applicant_skills(self, obj):
         if obj.applicant:
-            return [s.skill.name for s in obj.applicant.skills.select_related("skill")]
+            return [s.skill.name for s in obj.applicant.skills.all()]
         return []
+
+    def get_announcement_company_avatar(self, obj):
+        if obj.announcement and obj.announcement.enterprise and obj.announcement.enterprise.avatar:
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.announcement.enterprise.avatar.url)
+            return obj.announcement.enterprise.avatar.url
+        return None
 
 
 # ─────────────────────────────────────────────────────────────────────────────

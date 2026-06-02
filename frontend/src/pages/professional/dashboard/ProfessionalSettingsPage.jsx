@@ -4,6 +4,7 @@ import { Modal } from "../../../components/ui";
 import { goToChangePassword } from "../../auth/passwordReset/shared";
 import { deactivateAccount, deleteAccount, logout, changeEmail, getSecurityStatus } from "../../../services/accountApi";
 import { clearAuth, getUserEmail, parseApiError } from "../../../services/auth";
+import { getMyProfileDetails } from "../../../services/profilesApi";
 
 export default function ProfessionalSettingsPage() {
   const navigate = useNavigate();
@@ -18,10 +19,21 @@ export default function ProfessionalSettingsPage() {
   const [newEmail, setNewEmail] = useState("");
   const [emailChangePassword, setEmailChangePassword] = useState("");
   const [emailChangeSuccess, setEmailChangeSuccess] = useState("");
+  const [fullName, setFullName] = useState("");
 
   const userEmail = getUserEmail();
-  const displayName = userEmail?.split("@")[0] || "User";
-  const initials = userEmail ? userEmail.slice(0, 2).toUpperCase() : "PR";
+  const displayName = fullName || userEmail?.split("@")[0] || "User";
+  const initials = fullName
+    ? fullName
+        .split(" ")
+        .filter(Boolean)
+        .map((n) => n[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : userEmail
+    ? userEmail.slice(0, 2).toUpperCase()
+    : "PR";
   const [hasUsablePassword, setHasUsablePassword] = useState(true);
 
   useEffect(() => {
@@ -35,7 +47,21 @@ export default function ProfessionalSettingsPage() {
         console.error("Failed to fetch security status:", err);
       }
     }
+    async function fetchProfile() {
+      try {
+        const data = await getMyProfileDetails();
+        if (cancelled) return;
+        if (data && data.full_name) {
+          setFullName(data.full_name);
+        } else if (data && data.first_name && data.last_name) {
+          setFullName(`${data.first_name} ${data.last_name}`);
+        }
+      } catch (err) {
+        console.error("Failed to fetch profile details:", err);
+      }
+    }
     fetchSecurityStatus();
+    fetchProfile();
     return () => {
       cancelled = true;
     };
@@ -211,11 +237,12 @@ export default function ProfessionalSettingsPage() {
                               fromSettings: true,
                               isSetPassword: true,
                               returnTo: "/professional/dashboard/settings",
+                              portal: "professional",
                             },
                           });
                         }
                       }}
-                      className="px-4 py-2 border border-gray-200 rounded-full text-xs font-semibold hover:bg-white text-gray-700 transition-all cursor-pointer shadow-sm active:scale-95"
+                      className="px-4 py-2 bg-[#0B1E36] hover:bg-[#132c4d] text-white border border-[#0B1E36] rounded-full text-xs font-semibold transition-all cursor-pointer shadow-sm active:scale-95"
                     >
                       {hasUsablePassword ? "Change Password" : "Set Password"}
                     </button>
@@ -270,7 +297,7 @@ export default function ProfessionalSettingsPage() {
                           setDeactivatePassword("");
                           setShowDeactivate(true);
                         }}
-                        className="px-4 py-2 border border-amber-250 text-amber-800 rounded-full text-xs font-semibold hover:bg-amber-50 transition-all cursor-pointer"
+                        className="px-4 py-2 bg-[#0B1E36] hover:bg-[#132c4d] text-white border border-[#0B1E36] rounded-full text-xs font-semibold transition-all cursor-pointer shadow-sm active:scale-95"
                       >
                         Deactivate
                       </button>
@@ -321,13 +348,13 @@ export default function ProfessionalSettingsPage() {
 
       {/* Deactivate account modal (asks only for password) */}
       <Modal open={showDeactivate} onClose={() => setShowDeactivate(false)} className="max-w-md">
-        <div className="bg-amber-50 border-b border-amber-100 rounded-t-2xl px-6 py-5 flex gap-4 items-start">
-          <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-lg flex-shrink-0">
+        <div className="bg-blue-50/50 border-b border-blue-100 rounded-t-2xl px-6 py-5 flex gap-4 items-start">
+          <div className="w-10 h-10 rounded-full bg-blue-100 text-[#0B1E36] flex items-center justify-center font-bold text-lg flex-shrink-0">
             !
           </div>
           <div>
-            <h3 className="font-semibold text-amber-900 text-base">Deactivate account?</h3>
-            <p className="text-xs text-amber-800/80 mt-1">This will temporarily hide your profile from employers.</p>
+            <h3 className="font-semibold text-[#0B1E36] text-base">Deactivate account?</h3>
+            <p className="text-xs text-blue-900/70 mt-1">This will temporarily hide your profile from employers.</p>
           </div>
         </div>
         <div className="p-6">
@@ -337,7 +364,7 @@ export default function ProfessionalSettingsPage() {
             value={deactivatePassword}
             onChange={(e) => setDeactivatePassword(e.target.value)}
             placeholder="Enter your account password"
-            className="w-full px-4 py-3 rounded-2xl bg-gray-50 text-sm mb-4 outline-none border border-gray-200 focus:border-amber-400 transition-colors"
+            className="w-full px-4 py-3 rounded-2xl bg-gray-50 text-sm mb-4 outline-none border border-gray-200 focus:border-[#0B1E36] transition-colors"
           />
           {accountError && <p className="text-xs text-red-600 mb-4 font-medium">{accountError}</p>}
           <div className="flex gap-3 mt-2">
@@ -352,7 +379,7 @@ export default function ProfessionalSettingsPage() {
               type="button"
               disabled={!deactivatePassword || accountLoading}
               onClick={handleDeactivate}
-              className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl text-xs font-semibold transition-colors disabled:opacity-50"
+              className="flex-1 py-3 bg-[#0B1E36] hover:bg-[#132c4d] text-white rounded-2xl text-xs font-semibold transition-colors disabled:opacity-50"
             >
               {accountLoading ? "Deactivating…" : "Confirm Deactivation"}
             </button>

@@ -686,7 +686,6 @@ export default function ProfessionalProfileEditPage() {
             <h3 className="font-semibold text-navy mb-4">About Me</h3>
             <textarea
               rows={4}
-              required
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               placeholder="Tell businesses about your skills, interests and career goals..."

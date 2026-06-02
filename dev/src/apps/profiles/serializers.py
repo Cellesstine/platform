@@ -4,9 +4,7 @@ from django.utils.encoding import force_bytes
 from rest_framework import serializers
 
 from .utils import (
-	CompanySize,
 	Availability,
-	Industry,
 	)
 
 from .models import (
@@ -272,10 +270,11 @@ class ProfessionalListSerializer(serializers.ModelSerializer):
 			"years_experience",
 			"created_at",
 			"uidb64",
+			"avatar",
 		]
 
 	def get_uidb64(self, obj):
-		return urlsafe_base64_encode(force_bytes(obj.user.pk))
+		return urlsafe_base64_encode(force_bytes(obj.user_id))
 
 class EducationInputSerializer(serializers.Serializer):
 	institution = serializers.CharField(max_length=200)

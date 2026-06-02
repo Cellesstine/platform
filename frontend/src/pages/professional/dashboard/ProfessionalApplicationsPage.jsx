@@ -144,12 +144,20 @@ export default function ProfessionalApplicationsPage() {
                 {/* Header Card Row */}
                 <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
-                    <div 
-                      className="w-12 h-12 rounded-2xl flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                      style={{ background: "#1b2d52" }}
-                    >
-                      {(app.announcement_company || "CO").slice(0, 2).toUpperCase()}
-                    </div>
+                    {app.announcement_company_avatar ? (
+                      <img
+                        src={app.announcement_company_avatar}
+                        alt={app.announcement_company}
+                        className="w-12 h-12 rounded-2xl object-cover flex-shrink-0 border border-gray-100 shadow-sm"
+                      />
+                    ) : (
+                      <div 
+                        className="w-12 h-12 rounded-2xl flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-sm"
+                        style={{ background: "linear-gradient(135deg, #0B1E36 0%, #1d3d63 100%)" }}
+                      >
+                        {(app.announcement_company || "CO").slice(0, 2).toUpperCase()}
+                      </div>
+                    )}
                     <div>
                       <h2 className="font-serif text-lg text-navy-deep font-normal">{app.announcement_title}</h2>
                       <p className="text-xs text-gray-400 mt-0.5">
