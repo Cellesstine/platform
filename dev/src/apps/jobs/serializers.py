@@ -182,6 +182,7 @@ class ApplicationDetailsSerializer(serializers.ModelSerializer):
     applicant_wilaya      = serializers.CharField(source="applicant.wilaya", read_only=True, default="")
     applicant_wilaya_display = serializers.CharField(source="applicant.get_wilaya_display", read_only=True, default="")
     applicant_skills      = serializers.SerializerMethodField()
+    applicant_resume_file = serializers.SerializerMethodField()
 
     class Meta:
         model  = Application
@@ -190,6 +191,7 @@ class ApplicationDetailsSerializer(serializers.ModelSerializer):
             "announcement", "announcement_title", "announcement_company", "announcement_company_avatar",
             "applicant",    "applicant_email",    "applicant_name",
             "applicant_title", "applicant_years_exp", "applicant_wilaya", "applicant_wilaya_display", "applicant_skills",
+            "applicant_resume_file",
             "status",
             "cover_letter",
             "resume_file",
@@ -203,6 +205,14 @@ class ApplicationDetailsSerializer(serializers.ModelSerializer):
         if obj.applicant:
             return [s.skill.name for s in obj.applicant.skills.all()]
         return []
+
+    def get_applicant_resume_file(self, obj):
+        if obj.applicant and obj.applicant.resume_file:
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.applicant.resume_file.url)
+            return obj.applicant.resume_file.url
+        return None
 
     def get_announcement_company_avatar(self, obj):
         if obj.announcement and obj.announcement.enterprise and obj.announcement.enterprise.avatar:
