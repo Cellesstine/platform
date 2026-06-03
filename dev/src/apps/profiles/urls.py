@@ -10,5 +10,6 @@ urlpatterns = [
     path('post-edit/', views.profileEdit, name='postProfileEdit'),
     path('skills/', views.searchOrCreateSkills, name='searchOrCreateSkills'),
     path('me/', views.myProfileDetails, name='myProfileDetails'),
+    path('companies/', views.companiesList, name='companiesList'),
     path('<str:uidb64>/', views.profileDetails, name='profileDetails'),
 ]

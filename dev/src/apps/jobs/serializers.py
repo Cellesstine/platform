@@ -217,7 +217,7 @@ class ApplicationDetailsSerializer(serializers.ModelSerializer):
 
 class ApplicationStatusSerializer(serializers.ModelSerializer):
     VALID_TRANSITIONS = {
-        "PENDING":  {"REVIEWED"},
+        "PENDING":  {"ACCEPTED", "REJECTED"},
         "REVIEWED": {"ACCEPTED", "REJECTED"},
         "ACCEPTED": set(),
         "REJECTED": set(),

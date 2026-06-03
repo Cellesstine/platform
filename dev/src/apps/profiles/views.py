@@ -276,8 +276,8 @@ def searchOrCreateSkills(request):
         }, status=status.HTTP_201_CREATED)
 
 
-api_view(["POST"])
-permission_classes([IsAuthenticated])
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def repportUser(request, uidb64):
     user = decode_uid(uidb64)
 
@@ -286,4 +286,12 @@ def repportUser(request, uidb64):
         serializer.save(instance=user)
 
         return Response()
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def companiesList(request):
+    companies = EnterpriseProfile.objects.select_related("user").all().order_by("-created_at")
+    serializer = EnterpriseProfileDetailsSerializer(companies, many=True, context={'request': request})
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
