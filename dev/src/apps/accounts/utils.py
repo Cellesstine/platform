@@ -9,6 +9,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 
 from .models import Profile
+from .tokens import email_change_token_generator
 
 User = get_user_model()
 
@@ -108,7 +109,7 @@ def send_reactivation_email(request, user):
 
 def send_email_change_verification(request, user):
     uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
-    token = default_token_generator.make_token(user)
+    token = email_change_token_generator.make_token(user)
     context = _email_context(user, uidb64, token, "email-verify")
 
     message = render_to_string("emails/email_change_verification.html", context)

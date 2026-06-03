@@ -303,7 +303,7 @@ export function ProfessionalProfileSetupPage() {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState("+213 ");
   const [wilaya, setWilaya] = useState("");
   const [address, setAddress] = useState("");
   const [bio, setBio] = useState("");
@@ -354,27 +354,6 @@ export function ProfessionalProfileSetupPage() {
   const handleContinue = async () => {
     if (loading) return;
     setError("");
-    
-    if (!firstName.trim()) {
-      setError("First name is required.");
-      return;
-    }
-    if (!lastName.trim()) {
-      setError("Last name is required.");
-      return;
-    }
-    if (!phone.trim()) {
-      setError("Phone number is required.");
-      return;
-    }
-    if (!wilaya) {
-      setError("Please select your Wilaya.");
-      return;
-    }
-    if (!address.trim()) {
-      setError("Address is required.");
-      return;
-    }
 
     setLoading(true);
     try {
@@ -456,7 +435,14 @@ export function ProfessionalProfileSetupPage() {
           <input
             placeholder="+213 655 00 00 00"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val.startsWith("+213")) {
+                setPhone(val);
+              } else {
+                setPhone("+213 ");
+              }
+            }}
             className={`${inputClass} hover:border-gray-400 focus:border-navy focus:shadow-[0_0_15px_rgba(27,45,82,0.05)] transition-all duration-300`}
           />
         </Field>
@@ -629,14 +615,6 @@ export function ProfessionalDocumentsPage() {
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.type !== "application/pdf") {
-        setError("Only PDF files are allowed for CV/Resume.");
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        setError("CV file must be under 5MB.");
-        return;
-      }
       setResumeFile(file);
       setError("");
     }
@@ -645,23 +623,6 @@ export function ProfessionalDocumentsPage() {
   const handleSubmit = async () => {
     if (loading) return;
     setError("");
-
-    if (!professionalTitle.trim()) {
-      setError("Professional title / Job title is required.");
-      return;
-    }
-    
-    // Validate conditional fields
-    if ((companyName.trim() && !jobRole.trim()) || (!companyName.trim() && jobRole.trim())) {
-      setError("Please fill out both Company Name and Job Role for your work experience.");
-      return;
-    }
-
-    if ((institution.trim() || degree.trim() || field.trim()) && 
-        (!institution.trim() || !degree.trim() || !field.trim())) {
-      setError("Please fill out all education fields (Institution, Degree, and Field) or leave them all blank.");
-      return;
-    }
 
     setLoading(true);
     try {
@@ -674,14 +635,14 @@ export function ProfessionalDocumentsPage() {
         formData.append("resume_file", resumeFile);
       }
       
-      if (institution.trim()) formData.append("institution", institution);
-      if (degree.trim()) formData.append("degree", degree);
-      if (field.trim()) formData.append("field", field);
+      formData.append("institution", institution);
+      formData.append("degree", degree);
+      formData.append("field", field);
       
-      if (companyName.trim()) formData.append("company_name", companyName);
-      if (jobRole.trim()) formData.append("job_role", jobRole);
+      formData.append("company_name", companyName);
+      formData.append("job_role", jobRole);
       
-      if (portfolioUrl.trim()) formData.append("portfolio_url", portfolioUrl);
+      formData.append("portfolio_url", portfolioUrl);
 
       // Selected skill primary keys
       selectedSkills.forEach((s) => {

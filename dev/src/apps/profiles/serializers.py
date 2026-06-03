@@ -18,7 +18,13 @@ from .models import (
 	WorkExperience,
 	)
 
+from apps.accounts.models import (
+	Signal,
+	)
+
 class IndividualProfileSerializer(serializers.ModelSerializer):
+	phone = serializers.CharField(required=True, allow_blank=False)
+
 	class Meta:
 		model = IndividualProfile
 		fields = ["avatar","first_name", "last_name", "phone", "wilaya", "address", "bio"]
@@ -45,8 +51,17 @@ class IndividualProfileSerializer(serializers.ModelSerializer):
 		return value.strip().title()
 
 	def validate_phone(self, value):
-		if not(value.lstrip("+213 ").isdigit()):
+		new_val = value
+		if new_val.startswith("+213"):
+			new_val = new_val[4:]
+		new_val = new_val.replace(" ", "")
+		
+		if not new_val.isdigit():
 			raise serializers.ValidationError("Phone number can only contain digits")
+
+		if len(new_val) != 9:
+			raise serializers.ValidationError('Phone number must contain exactly 9 digits')
+
 		return value
 
 	@transaction.atomic
@@ -65,15 +80,15 @@ class IndividualProfileSerializer(serializers.ModelSerializer):
 		return individual
 
 class IndividualProfilePostSetupSerializer(serializers.Serializer):
-	professional_title = serializers.CharField(max_length=20)
+	professional_title = serializers.CharField(max_length=50)
 	years_experience = serializers.IntegerField(default=0)
 
-	institution = serializers.CharField(max_length=50, required=False, allow_blank=True)
-	degree = serializers.CharField(max_length=50, required=False, allow_blank=True)
-	field = serializers.CharField(max_length=50, required=False, allow_blank=True)
+	institution = serializers.CharField(max_length=200, required=False, allow_blank=True)
+	degree = serializers.CharField(max_length=150, required=False, allow_blank=True)
+	field = serializers.CharField(max_length=150, required=False, allow_blank=True)
 
-	company_name = serializers.CharField(max_length=50, required=False, allow_blank=True)
-	job_role = serializers.CharField(max_length=50, required=False, allow_blank=True)
+	company_name = serializers.CharField(max_length=200, required=False, allow_blank=True)
+	job_role = serializers.CharField(max_length=150, required=False, allow_blank=True)
 
 	portfolio_url = serializers.URLField(required=False, allow_blank=True)
 
@@ -130,6 +145,7 @@ class IndividualProfilePostSetupSerializer(serializers.Serializer):
 
 		return data
 
+	@transaction.atomic
 	def save(self, *args, instance, **kwargs):
 		data = self.validated_data
 
@@ -142,28 +158,32 @@ class IndividualProfilePostSetupSerializer(serializers.Serializer):
 
 		instance.save()
 
-		skills = data.get("skills", [])
-		if skills:
-			with transaction.atomic():
-				UserSkill.objects.filter(individual=instance).delete()
-				obj = []
-				for skill in skills:
-					obj.append(UserSkill(individual=instance, skill=skill))
+		skills = data.get("skills", None)
+		if skills is not None:
+			UserSkill.objects.filter(individual=instance).delete()
+			obj = []
+			for skill in skills:
+				obj.append(UserSkill(individual=instance, skill=skill))
 
-				UserSkill.objects.bulk_create(obj)
+			UserSkill.objects.bulk_create(obj)
 
+		Education.objects.filter(individual=instance).delete()
 		if data.get("institution") and data.get("degree") and data.get("field"):
 			Education.objects.create(individual=instance, institution=data["institution"], degree=data["degree"], field=data["field"])
 
+		WorkExperience.objects.filter(individual=instance).delete()
 		if data.get("company_name") and data.get("job_role"):
 			WorkExperience.objects.create(individual=instance, company_name=data["company_name"], job_role=data["job_role"])
 
+		Portfolio.objects.filter(individual=instance).delete()
 		if data.get("portfolio_url"):
 			Portfolio.objects.create(individual=instance, url=data["portfolio_url"])
 
 		return instance
 
 class EntrepriseProfileSerializer(serializers.ModelSerializer):
+	phone = serializers.CharField(required=True, allow_blank=False)
+
 	class Meta:
 		model = EnterpriseProfile
 		fields = ["avatar", "company_name", "wilaya", "address", "industry", "company_size", "phone"]
@@ -178,6 +198,20 @@ class EntrepriseProfileSerializer(serializers.ModelSerializer):
 		if not(value.strip()):
 			raise serializers.ValidationError("Address is required")
 		return value.strip().title()
+
+	def validate_phone(self, value):
+		new_val = value
+		if new_val.startswith("+213"):
+			new_val = new_val[4:]
+		new_val = new_val.replace(" ", "")
+		
+		if not new_val.isdigit():
+			raise serializers.ValidationError("Phone number can only contain digits")
+
+		if len(new_val) != 9:
+			raise serializers.ValidationError('Phone number must contain exactly 9 digits')
+
+		return value
 
 	@transaction.atomic
 	def create(self, validated_data):
@@ -194,9 +228,18 @@ class EntrepriseProfileSerializer(serializers.ModelSerializer):
 		return enterprise
 
 class EnterpriseVerificationSerializer(serializers.ModelSerializer):
+	register = serializers.FileField(required=True, allow_null=False)
+
 	class Meta:
 		model = EnterpriseProfile
 		fields = ["register", "website"]
+
+	def validate_register(self, value):
+		if not value:
+			raise serializers.ValidationError("Please upload your Commercial Register document.")
+		if value.size >52 * 1024 * 1024:
+			raise serializers.ValidationError("File size cannot exceed 5MB.")
+		return value
 
 
 class EducationDetailsSerializer(serializers.ModelSerializer):
@@ -429,3 +472,13 @@ class EnterpriseProfileEditSerializer(serializers.ModelSerializer):
 			setattr(instance, key, value)
 		instance.save()
 		return instance
+
+
+class RepportSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Signal
+		fields = [
+			"reason", 
+		]
+
+	

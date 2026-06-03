@@ -257,7 +257,7 @@ export default function ProfessionalAnnouncementsPage() {
 
               {/* Role Title */}
               <h2 className="font-serif font-bold text-lg text-gray-900 mb-2 group-hover:text-[#0B1E36] transition-colors">
-                {job.role_display || job.role}
+                {job.title || job.role_display || job.role}
               </h2>
 
               {/* Real Description */}

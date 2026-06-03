@@ -219,15 +219,23 @@ class PasswordChangeSerializer(serializers.Serializer):
         return value
 
     def validate(self, data):
+        current_password = data.get("password")
         password = data.get("new_password")
         password_confirm = data.get("new_password_confirm")
 
         errors = {}
 
+        user = self.context.get("user")
+
+        if current_password and password and current_password == password:
+            errors["new_password"] = ["New password must be different from current password."]
+
         if password and " " in password:
             errors["new_password"] = ["password can not contain white spaces"]
+
         if password_confirm and " " in password_confirm:
             errors["new_password_confirm"] = ["password can not contain white spaces"]
+
 
         if errors:
             raise serializers.ValidationError(errors)

@@ -178,30 +178,6 @@ export default function SettingsPage() {
               </svg>
               Security
             </button>
-            
-            <button
-              type="button"
-              onClick={() => setSection("preferences")}
-              className={`w-full text-left px-4 py-3 rounded-2xl text-sm transition-all flex items-center gap-3 font-medium ${
-                section === "preferences"
-                  ? "bg-[#3C0713] text-white shadow-md"
-                  : "text-gray-600 hover:bg-slate-50 hover:text-[#3C0713]"
-              }`}
-            >
-              {/* Sliders/Cog SVG */}
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="4" y1="21" x2="4" y2="14" />
-                <line x1="4" y1="10" x2="4" y2="3" />
-                <line x1="12" y1="21" x2="12" y2="12" />
-                <line x1="12" y1="8" x2="12" y2="3" />
-                <line x1="20" y1="21" x2="20" y2="16" />
-                <line x1="20" y1="12" x2="20" y2="3" />
-                <line x1="1" y1="14" x2="7" y2="14" />
-                <line x1="9" y1="8" x2="15" y2="8" />
-                <line x1="17" y1="16" x2="23" y2="16" />
-              </svg>
-              Preferences
-            </button>
           </nav>
         </div>
 
@@ -321,23 +297,6 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {section === "preferences" && (
-            <div className="flex flex-col gap-8">
-              <div>
-                <h3 className="font-serif text-2xl text-gray-900 font-medium mb-1">App Preferences</h3>
-                <p className="text-xs text-gray-400">Configure language options and preferences.</p>
-              </div>
-
-              <div className="max-w-xs">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">Display Language</label>
-                <select className="w-full px-4 py-3 rounded-2xl bg-gray-50 text-sm outline-none border border-gray-200 focus:border-[#3C0713] transition-colors cursor-pointer">
-                  <option>English</option>
-                  <option>Français</option>
-                  <option>العربية</option>
-                </select>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

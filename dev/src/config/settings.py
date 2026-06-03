@@ -185,7 +185,3 @@ EMAIL_USE_SSL = True
 
 EMAIL_HOST_USER = "linkioteam@gmail.com"
 EMAIL_HOST_PASSWORD = "yhxr zrae insd mrdm"
-
-#if DEBUG:
-#    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-    

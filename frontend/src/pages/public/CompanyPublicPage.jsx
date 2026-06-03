@@ -243,105 +243,37 @@ export default function CompanyPublicPage() {
                   </span>
                 </div>
 
-                {/* Grid display of metrics & the curve */}
-                <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-6 md:gap-8 divide-y lg:divide-y-0 lg:divide-x divide-gray-100">
+                {/* Simplified Metrics Display */}
+                <div className="flex flex-col sm:flex-row gap-8 sm:gap-16">
                   
-                  {/* Left Side: Real Metrics */}
-                  <div className="space-y-5 pr-2 flex flex-col justify-center">
-                    {/* Stat 1: Active Announcements */}
-                    <div>
-                      <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="opacity-80">
-                          <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-                          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-                        </svg>
-                        Job Announcements
-                      </div>
-                      <div className="font-serif text-2xl font-black text-gray-900 tracking-tight flex items-baseline gap-1.5">
-                        {stats.announcementsCount}
-                        <span className="text-[10px] text-gray-400 font-sans font-medium">Active</span>
-                      </div>
+                  {/* Stat 1: Active Announcements */}
+                  <div>
+                    <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="opacity-80">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                      </svg>
+                      Job Announcements
                     </div>
-
-                    {/* Stat 2: Applicants count */}
-                    <div>
-                      <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="opacity-80">
-                          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                          <circle cx="9" cy="7" r="4" />
-                          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                        </svg>
-                        Total Applicants
-                      </div>
-                      <div className="font-serif text-2xl font-black text-gray-900 tracking-tight flex items-baseline gap-1.5">
-                        {stats.applicantsCount}
-                        <span className="text-[10px] text-emerald-500 font-sans font-medium flex items-center gap-0.5">
-                          ▲ 12%
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Stat 3: Avg Review Velocity */}
-                    <div>
-                      <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="opacity-80">
-                          <circle cx="12" cy="12" r="10" />
-                          <polyline points="12 6 12 12 16 14" />
-                        </svg>
-                        Review Velocity
-                      </div>
-                      <div className="font-serif text-xl font-black text-[#3C0713] tracking-tight">
-                        &lt; 48 Hours
-                      </div>
+                    <div className="font-serif text-2xl font-black text-gray-900 tracking-tight flex items-baseline gap-1.5">
+                      {stats.announcementsCount}
+                      <span className="text-[10px] text-gray-400 font-sans font-medium">Active</span>
                     </div>
                   </div>
 
-                  {/* Right Side: Application Curve */}
-                  <div className="pt-6 lg:pt-0 lg:pl-8 flex flex-col justify-between">
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="text-xs text-gray-500 font-bold tracking-wide uppercase">Application Curve (Past 6 Months)</span>
-                      <span className="text-[11px] text-gray-400 font-medium">Updated just now</span>
-                    </div>
-                    
-                    {/* SVG Curve */}
-                    <div className="w-full bg-slate-50/50 rounded-2xl p-3 border border-slate-100">
-                      <svg className="w-full h-auto" viewBox="0 0 500 150" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                          <linearGradient id="pub-chart-gradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#3C0713" stopOpacity="0.25" />
-                            <stop offset="100%" stopColor="#3C0713" stopOpacity="0.0" />
-                          </linearGradient>
-                        </defs>
-                        
-                        <line x1="30" y1="20" x2="470" y2="20" stroke="#f1f5f9" strokeWidth="1" />
-                        <line x1="30" y1="60" x2="470" y2="60" stroke="#f1f5f9" strokeWidth="1" />
-                        <line x1="30" y1="100" x2="470" y2="100" stroke="#f1f5f9" strokeWidth="1" />
-                        <line x1="30" y1="140" x2="470" y2="140" stroke="#e2e8f0" strokeWidth="1.5" />
-
-                        <path
-                          d="M 30,130 C 100,120 130,60 200,90 C 270,120 320,40 400,50 C 430,55 450,30 470,25 L 470,140 L 30,140 Z"
-                          fill="url(#pub-chart-gradient)"
-                        />
-                        
-                        <path
-                          d="M 30,130 C 100,120 130,60 200,90 C 270,120 320,40 400,50 C 430,55 450,30 470,25"
-                          stroke="#3C0713"
-                          strokeWidth="3.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-
-                        <circle cx="470" cy="25" r="5" fill="#3C0713" stroke="white" strokeWidth="2" />
-                        <circle cx="470" cy="25" r="10" fill="#3C0713" fillOpacity="0.15" />
-
-                        <text x="30" y="152" fill="#94a3b8" fontSize="10" fontFamily="sans-serif" textAnchor="middle" fontWeight="bold">Jan</text>
-                        <text x="118" y="152" fill="#94a3b8" fontSize="10" fontFamily="sans-serif" textAnchor="middle" fontWeight="bold">Feb</text>
-                        <text x="206" y="152" fill="#94a3b8" fontSize="10" fontFamily="sans-serif" textAnchor="middle" fontWeight="bold">Mar</text>
-                        <text x="294" y="152" fill="#94a3b8" fontSize="10" fontFamily="sans-serif" textAnchor="middle" fontWeight="bold">Apr</text>
-                        <text x="382" y="152" fill="#94a3b8" fontSize="10" fontFamily="sans-serif" textAnchor="middle" fontWeight="bold">May</text>
-                        <text x="470" y="152" fill="#3C0713" fontSize="10" fontFamily="sans-serif" textAnchor="middle" fontWeight="bold">Jun</text>
+                  {/* Stat 2: Applicants count */}
+                  <div>
+                    <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="opacity-80">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                       </svg>
+                      Total Applicants
+                    </div>
+                    <div className="font-serif text-2xl font-black text-gray-900 tracking-tight flex items-baseline gap-1.5">
+                      {stats.applicantsCount}
                     </div>
                   </div>
 

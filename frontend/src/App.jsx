@@ -182,6 +182,7 @@ export default function App() {
           <Route path="announcements/new" element={<NewAnnouncementPage />} />
           <Route path="applicants" element={<ApplicantsPage />} />
           <Route path="find-workers" element={<FindWorkersPage />} />
+          <Route path="find-workers/:uidb64" element={<FindWorkersPage />} />
           <Route path="company-profile" element={<CompanyProfilePage />} />
           <Route path="company-profile/edit" element={<CompanyProfileEditPage />} />
           <Route path="settings" element={<SettingsPage />} />
@@ -201,6 +202,7 @@ export default function App() {
           <Route path="announcements/:id" element={<ProfessionalJobDetailPage />} />
           <Route path="applications" element={<ProfessionalApplicationsPage />} />
           <Route path="find-workers" element={<FindWorkersPage />} />
+          <Route path="find-workers/:uidb64" element={<FindWorkersPage />} />
           <Route path="profile" element={<ProfessionalProfilePage />} />
           <Route path="profile/edit" element={<ProfessionalProfileEditPage />} />
           <Route path="settings" element={<ProfessionalSettingsPage />} />

@@ -79,7 +79,7 @@ export default function ProfessionalJobDetailPage() {
             </div>
           </div>
 
-          <h1 className="font-serif text-3xl text-navy mb-4">{job.role_display || job.role}</h1>
+          <h1 className="font-serif text-3xl text-navy mb-4">{job.title || job.role_display || job.role}</h1>
 
           <div className="flex flex-wrap gap-2 mb-8">
             <Tag variant="remote">{job.job_type_display || job.job_type}</Tag>
@@ -125,7 +125,7 @@ export default function ProfessionalJobDetailPage() {
 
         <div className="flex flex-col gap-4">
           <div className="bg-white rounded-2xl p-6 shadow-sm sticky top-4">
-            <p className="font-serif text-2xl text-navy mb-1">{job.role_display || job.role}</p>
+            <p className="font-serif text-2xl text-navy mb-1">{job.title || job.role_display || job.role}</p>
             <p className="text-xs text-gray-400 mb-6">{job.enterprise_name}</p>
 
             <dl className="space-y-3 text-sm mb-6">

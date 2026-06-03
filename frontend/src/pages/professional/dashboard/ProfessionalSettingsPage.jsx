@@ -24,15 +24,9 @@ export default function ProfessionalSettingsPage() {
   const userEmail = getUserEmail();
   const displayName = fullName || userEmail?.split("@")[0] || "User";
   const initials = fullName
-    ? fullName
-        .split(" ")
-        .filter(Boolean)
-        .map((n) => n[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase()
+    ? fullName.replace(/\s+/g, "").slice(0, 2).toUpperCase()
     : userEmail
-    ? userEmail.slice(0, 2).toUpperCase()
+    ? userEmail.replace(/\s+/g, "").slice(0, 2).toUpperCase()
     : "PR";
   const [hasUsablePassword, setHasUsablePassword] = useState(true);
 
@@ -68,11 +62,11 @@ export default function ProfessionalSettingsPage() {
   }, []);
 
   const handleDeactivate = async () => {
-    if (!deactivatePassword) return;
+    if (hasUsablePassword && !deactivatePassword) return;
     setAccountLoading(true);
     setAccountError("");
     try {
-      await deactivateAccount(deactivatePassword);
+      await deactivateAccount(hasUsablePassword ? deactivatePassword : "");
       await logout();
       clearAuth();
       navigate("/sign-in", {
@@ -87,11 +81,11 @@ export default function ProfessionalSettingsPage() {
   };
 
   const handleDelete = async () => {
-    if (!deletePassword) return;
+    if (hasUsablePassword && !deletePassword) return;
     setAccountLoading(true);
     setAccountError("");
     try {
-      await deleteAccount(deletePassword);
+      await deleteAccount(hasUsablePassword ? deletePassword : "");
       clearAuth();
       navigate("/", { replace: true });
     } catch (err) {
@@ -167,30 +161,6 @@ export default function ProfessionalSettingsPage() {
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
               Security
-            </button>
-            
-            <button
-              type="button"
-              onClick={() => setSection("preferences")}
-              className={`w-full text-left px-4 py-3 rounded-2xl text-sm transition-all flex items-center gap-3 font-medium ${
-                section === "preferences"
-                  ? "bg-[#0B1E36] text-white shadow-md"
-                  : "text-gray-600 hover:bg-slate-50 hover:text-[#0B1E36]"
-              }`}
-            >
-              {/* Sliders/Cog SVG */}
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="4" y1="21" x2="4" y2="14" />
-                <line x1="4" y1="10" x2="4" y2="3" />
-                <line x1="12" y1="21" x2="12" y2="12" />
-                <line x1="12" y1="8" x2="12" y2="3" />
-                <line x1="20" y1="21" x2="20" y2="16" />
-                <line x1="20" y1="12" x2="20" y2="3" />
-                <line x1="1" y1="14" x2="7" y2="14" />
-                <line x1="9" y1="8" x2="15" y2="8" />
-                <line x1="17" y1="16" x2="23" y2="16" />
-              </svg>
-              Preferences
             </button>
           </nav>
         </div>
@@ -325,28 +295,10 @@ export default function ProfessionalSettingsPage() {
               </div>
             </div>
           )}
-
-          {section === "preferences" && (
-            <div className="flex flex-col gap-8">
-              <div>
-                <h3 className="font-serif text-2xl text-gray-900 font-medium mb-1">App Preferences</h3>
-                <p className="text-xs text-gray-400">Configure language options and preferences.</p>
-              </div>
-
-              <div className="max-w-xs">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">Display Language</label>
-                <select className="w-full px-4 py-3 rounded-2xl bg-gray-50 text-sm outline-none border border-gray-200 focus:border-[#0B1E36] transition-colors cursor-pointer">
-                  <option>English</option>
-                  <option>Français</option>
-                  <option>العربية</option>
-                </select>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Deactivate account modal (asks only for password) */}
+      {/* Deactivate account modal (asks only for password if hasUsablePassword is true) */}
       <Modal open={showDeactivate} onClose={() => setShowDeactivate(false)} className="max-w-md">
         <div className="bg-blue-50/50 border-b border-blue-100 rounded-t-2xl px-6 py-5 flex gap-4 items-start">
           <div className="w-10 h-10 rounded-full bg-blue-100 text-[#0B1E36] flex items-center justify-center font-bold text-lg flex-shrink-0">
@@ -358,14 +310,22 @@ export default function ProfessionalSettingsPage() {
           </div>
         </div>
         <div className="p-6">
-          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">Enter Password to Confirm</label>
-          <input
-            type="password"
-            value={deactivatePassword}
-            onChange={(e) => setDeactivatePassword(e.target.value)}
-            placeholder="Enter your account password"
-            className="w-full px-4 py-3 rounded-2xl bg-gray-50 text-sm mb-4 outline-none border border-gray-200 focus:border-[#0B1E36] transition-colors"
-          />
+          {hasUsablePassword ? (
+            <>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">Enter Password to Confirm</label>
+              <input
+                type="password"
+                value={deactivatePassword}
+                onChange={(e) => setDeactivatePassword(e.target.value)}
+                placeholder="Enter your account password"
+                className="w-full px-4 py-3 rounded-2xl bg-gray-50 text-sm mb-4 outline-none border border-gray-200 focus:border-[#0B1E36] transition-colors"
+              />
+            </>
+          ) : (
+            <p className="text-xs text-gray-500 mb-4 font-medium">
+              Confirming this action does not require a password as you log in via Google.
+            </p>
+          )}
           {accountError && <p className="text-xs text-red-600 mb-4 font-medium">{accountError}</p>}
           <div className="flex gap-3 mt-2">
             <button
@@ -377,7 +337,7 @@ export default function ProfessionalSettingsPage() {
             </button>
             <button
               type="button"
-              disabled={!deactivatePassword || accountLoading}
+              disabled={accountLoading || (hasUsablePassword && !deactivatePassword)}
               onClick={handleDeactivate}
               className="flex-1 py-3 bg-[#0B1E36] hover:bg-[#132c4d] text-white rounded-2xl text-xs font-semibold transition-colors disabled:opacity-50"
             >
@@ -387,7 +347,7 @@ export default function ProfessionalSettingsPage() {
         </div>
       </Modal>
 
-      {/* Delete account modal (asks only for password) */}
+      {/* Delete account modal (asks only for password if hasUsablePassword is true) */}
       <Modal open={showDelete} onClose={() => setShowDelete(false)} className="max-w-md">
         <div className="bg-red-50 border-b border-red-100 rounded-t-2xl px-6 py-5 flex gap-4 items-start">
           <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold text-lg flex-shrink-0">
@@ -403,14 +363,22 @@ export default function ProfessionalSettingsPage() {
             Deleting your account will permanently wipe your profile details, application logs, and portfolio data.
           </p>
           
-          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">Enter Password to Confirm</label>
-          <input
-            type="password"
-            value={deletePassword}
-            onChange={(e) => setDeletePassword(e.target.value)}
-            placeholder="Enter your account password"
-            className="w-full px-4 py-3 rounded-2xl bg-gray-50 text-sm mb-4 outline-none border border-gray-200 focus:border-red-400 transition-colors"
-          />
+          {hasUsablePassword ? (
+            <>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">Enter Password to Confirm</label>
+              <input
+                type="password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                placeholder="Enter your account password"
+                className="w-full px-4 py-3 rounded-2xl bg-gray-50 text-sm mb-4 outline-none border border-gray-200 focus:border-red-400 transition-colors"
+              />
+            </>
+          ) : (
+            <p className="text-xs text-gray-500 mb-4 font-medium">
+              Confirming this action does not require a password as you log in via Google.
+            </p>
+          )}
           {accountError && <p className="text-xs text-red-600 mb-4 font-medium">{accountError}</p>}
           <div className="flex gap-3 mt-2">
             <button
@@ -422,7 +390,7 @@ export default function ProfessionalSettingsPage() {
             </button>
             <button
               type="button"
-              disabled={!deletePassword || accountLoading}
+              disabled={accountLoading || (hasUsablePassword && !deletePassword)}
               onClick={handleDelete}
               className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-2xl text-xs font-semibold transition-colors disabled:opacity-50"
             >
@@ -449,14 +417,18 @@ export default function ProfessionalSettingsPage() {
             className="w-full px-4 py-3 rounded-2xl bg-gray-50 text-sm mb-4 outline-none border border-gray-200 focus:border-[#0B1E36] transition-colors"
           />
 
-          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">Current Password</label>
-          <input
-            type="password"
-            value={emailChangePassword}
-            onChange={(e) => setEmailChangePassword(e.target.value)}
-            placeholder="Confirm with password"
-            className="w-full px-4 py-3 rounded-2xl bg-gray-50 text-sm mb-4 outline-none border border-gray-200 focus:border-[#0B1E36] transition-colors"
-          />
+          {hasUsablePassword && (
+            <>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">Current Password</label>
+              <input
+                type="password"
+                value={emailChangePassword}
+                onChange={(e) => setEmailChangePassword(e.target.value)}
+                placeholder="Confirm with password"
+                className="w-full px-4 py-3 rounded-2xl bg-gray-50 text-sm mb-4 outline-none border border-gray-200 focus:border-[#0B1E36] transition-colors"
+              />
+            </>
+          )}
 
           {accountError && <p className="text-xs text-red-600 mb-4 font-medium">{accountError}</p>}
           

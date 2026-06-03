@@ -41,7 +41,7 @@ export default function ProfessionalDashboardHome() {
             const apps = await listApplications({ applicant: profileId });
             if (cancelled) return;
             setApplicationCount(apps.length);
-            setOffersCount(apps.filter((app) => app.status === "ACCEPT").length);
+            setOffersCount(apps.filter((app) => app.status === "ACCEPTED").length);
           }
         }
       } catch (err) {
@@ -125,7 +125,7 @@ export default function ProfessionalDashboardHome() {
                 className="flex items-center justify-between p-4 border border-gray-100 rounded-2xl hover:bg-gray-50 transition-all text-left cursor-pointer"
               >
                 <div>
-                  <p className="font-semibold text-sm text-gray-900">{job.role_display || job.role}</p>
+                  <p className="font-semibold text-sm text-gray-900">{job.title || job.role_display || job.role}</p>
                   <p className="text-xs text-gray-400 mt-0.5">
                     {job.enterprise_name} · {job.wilaya_display || job.wilaya}
                   </p>

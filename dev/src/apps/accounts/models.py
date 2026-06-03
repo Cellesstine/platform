@@ -5,6 +5,7 @@ from apps.core.utils import avatar_upload_path
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 
 
+
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -27,7 +28,24 @@ class CustomUserManager(BaseUserManager):
             raise ValueError('Superuser must have is_superuser=True.')
 
         return self.create_user(email, password, **extra_fields)
-    
+
+class Signal(models.Model):
+    class Reason(models.TextChoices):
+        ILLEGAL_CONTENT = "ILLEGAL_CONTENT", "Illegal content"
+        HATE_SPEECH = "HATE_SPEECH", "Hate speech"
+        IMPERSONATION = "IMPERSONATION", "Impersonation"
+
+    reason = models.CharField(max_length=25, choices=Reason.choices)
+    is_repported = models.BooleanField(null=True, blank=True, default=False)
+
+    reported_profile = models.ForeignKey('Profile', on_delete=models.CASCADE, related_name='reports_received')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Reported: {self.reported_profile.user.username} for {self.reason}"
+
+
 class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
     pending_email = models.EmailField(blank=True, default='')

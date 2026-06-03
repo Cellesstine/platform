@@ -9,7 +9,8 @@ from apps.accounts.utils import (
 )
 
 from apps.accounts.models import (
-    Profile
+    Profile,
+    Signal,
 )
 
 from .models import IndividualProfile, EnterpriseProfile
@@ -24,6 +25,7 @@ from .serializers import (
     ProfessionalListSerializer,
     IndividualProfileEditSerializer,
     EnterpriseProfileEditSerializer,
+    RepportSerializer,
     )
 
 @api_view(["GET", "POST"])
@@ -120,7 +122,6 @@ def profileEdit(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def profileDetails(request, uidb64):
-    # Try decoding as base64 user primary key
     user = decode_uid(uidb64)
     profile = None
     is_owner = False
@@ -273,3 +274,16 @@ def searchOrCreateSkills(request):
             "name": skill.name,
             "category": skill.get_category_display()
         }, status=status.HTTP_201_CREATED)
+
+
+api_view(["POST"])
+permission_classes([IsAuthenticated])
+def repportUser(request, uidb64):
+    user = decode_uid(uidb64)
+
+    serializer = RepportSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save(instance=user)
+
+        return Response()
+

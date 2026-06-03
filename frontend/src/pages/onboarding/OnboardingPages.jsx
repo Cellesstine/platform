@@ -405,31 +405,6 @@ export function OnboardingCompany() {
 
   const handleContinue = async (e) => {
     e.preventDefault();
-    if (!companyName.trim()) {
-      setError("Company Name is required.");
-      return;
-    }
-    if (!wilaya) {
-      setError("Please select a Wilaya.");
-      return;
-    }
-    if (!address.trim()) {
-      setError("Business Address is required.");
-      return;
-    }
-    if (!phone.trim()) {
-      setError("Phone Number is required.");
-      return;
-    }
-    if (!industry) {
-      setError("Please select an Industry.");
-      return;
-    }
-    if (!companySize) {
-      setError("Please select a Company Size.");
-      return;
-    }
-
     setLoading(true);
     setError("");
     try {
@@ -597,10 +572,6 @@ export function OnboardingDocuments() {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        setError("File size cannot exceed 2MB.");
-        return;
-      }
       setRegisterFile(file);
       setError("");
     }
@@ -608,16 +579,14 @@ export function OnboardingDocuments() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!registerFile) {
-      setError("Please upload your Commercial Register document.");
-      return;
-    }
 
     setLoading(true);
     setError("");
     try {
       const formData = new FormData();
-      formData.append("register", registerFile);
+      if (registerFile) {
+        formData.append("register", registerFile);
+      }
       if (website.trim()) {
         formData.append("website", website.trim());
       }

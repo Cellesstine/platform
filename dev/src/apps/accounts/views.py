@@ -34,6 +34,7 @@ from .utils import (
 )
 
 User = get_user_model()
+from .tokens import email_change_token_generator
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
@@ -198,11 +199,12 @@ def reactivateAccountView(request, uidb64, token):
 @permission_classes([IsAuthenticated])
 def deleteAccountView(request):
     user = request.user
-    password = request.data.get("password")
-    if not(user.check_password(password)):
-        return Response({'error': 'Incorrect password.'},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+    if user.has_usable_password():
+        password = request.data.get("password")
+        if not password or not user.check_password(password):
+            return Response({'error': 'Incorrect password.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
     user.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
@@ -211,12 +213,13 @@ def deleteAccountView(request):
 @permission_classes([IsAuthenticated])
 def deactivateAccountView(request):
     user = request.user
-    password = request.data.get("password")
+    if user.has_usable_password():
+        password = request.data.get("password")
 
-    if not(user.check_password(password)):
-        return Response({'error': 'Incorrect password.'},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+        if not password or not user.check_password(password):
+            return Response({'error': 'Incorrect password.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
     user.is_active = False
     user.save(update_fields=["is_active"])
@@ -247,15 +250,21 @@ def changeEmailView(request):
 def verifyEmailChangeView(request, uidb64, token):
     user = decode_uid(uidb64)
  
-    if user and default_token_generator.check_token(user, token) and user.pending_email:
-        user.email = user.pending_email
-        user.pending_email = ""
-        user.save(update_fields=['email', 'pending_email'])
- 
-        return Response(
-            {'detail': 'Email address updated successfully'},
-            status=status.HTTP_200_OK,
-        )
+    if user and email_change_token_generator.check_token(user, token):
+        if user.pending_email:
+            user.email = user.pending_email
+            user.pending_email = ""
+            user.save(update_fields=['email', 'pending_email'])
+            return Response(
+                {'detail': 'Email address updated successfully'},
+                status=status.HTTP_200_OK,
+            )
+        else:
+            # If the token is valid but pending_email is empty, it means the email was already changed.
+            return Response(
+                {'detail': 'Email address updated successfully'},
+                status=status.HTTP_200_OK,
+            )
  
     return Response(
         {'error': 'Verification link is invalid/expired.'},

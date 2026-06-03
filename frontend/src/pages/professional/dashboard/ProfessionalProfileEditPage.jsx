@@ -250,14 +250,6 @@ export default function ProfessionalProfileEditPage() {
   const handleCvChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.type !== "application/pdf") {
-        setError("Only PDF files are allowed for CV.");
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        setError("PDF file size must be under 5MB.");
-        return;
-      }
       setCvFile(file);
       setError("");
     }
@@ -365,7 +357,7 @@ export default function ProfessionalProfileEditPage() {
                 />
               ) : (
                 <div className="w-24 h-24 bg-pro-blue rounded-full flex items-center justify-center text-navy text-2xl font-semibold">
-                  {`${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() || "YB"}
+                  {`${firstName || ""}${lastName || ""}`.replace(/\s+/g, "").slice(0, 2).toUpperCase() || "YB"}
                 </div>
               )}
               <label className="absolute bottom-0 right-0 w-8 h-8 bg-navy rounded-full text-white text-sm flex items-center justify-center cursor-pointer shadow hover:opacity-90 transition-opacity">

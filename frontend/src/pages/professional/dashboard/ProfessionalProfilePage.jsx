@@ -49,8 +49,9 @@ export default function ProfessionalProfilePage() {
 
   if (!profile) return null;
 
-  // Format initials for avatar placeholder
-  const initials = `${profile.first_name?.[0] || ""}${profile.last_name?.[0] || ""}`.toUpperCase();
+  // Format initials for avatar placeholder (first two letters of the full name)
+  const fullName = `${profile.first_name || ""} ${profile.last_name || ""}`.trim();
+  const initials = fullName.replace(/\s+/g, "").slice(0, 2).toUpperCase() || "YB";
 
   // Helper to format Wilaya nicely
   const formatWilaya = (w) => {

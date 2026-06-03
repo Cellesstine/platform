@@ -17,16 +17,16 @@ export function goToChangePassword(navigate, portal) {
   });
 }
 
-export function PasswordResetTopbar({ backTo = "/sign-in", backLabel = "← Back to Sign In" }) {
+export function PasswordResetTopbar({ backTo = "/sign-in", backLabel = "← Back to Sign In", light = false }) {
   const navigate = useNavigate();
 
   return (
     <div className="linkio-topbar">
-      <LinkioBrand />
+      <LinkioBrand wordmarkClassName={`font-serif text-lg font-semibold tracking-tight ${light ? "text-white" : "text-navy"}`} />
       <button
         type="button"
         onClick={() => navigate(backTo)}
-        className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
+        className={`text-sm transition-colors ${light ? "text-slate-300 hover:text-white" : "text-gray-500 hover:text-gray-900"}`}
       >
         {backLabel}
       </button>
@@ -94,9 +94,9 @@ export function GradientButton({ children, onClick, type = "button", disabled = 
   );
 }
 
-export function PasswordResetShell({ children, topbar }) {
+export function PasswordResetShell({ children, topbar, className = "bg-cream" }) {
   return (
-    <div className="min-h-screen bg-cream flex flex-col font-sans">
+    <div className={`min-h-screen ${className} flex flex-col font-sans`}>
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-10 text-center">{children}</div>
     </div>
   );

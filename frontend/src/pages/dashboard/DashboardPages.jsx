@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import api from "../../services/api";
 import {
   listAnnouncements,
@@ -106,7 +106,7 @@ export function DashboardHome() {
   const [recentAnnouncements, setRecentAnnouncements] = useState([]);
   const [companyName, setCompanyName] = useState("");
   const [companyBio, setCompanyBio] = useState("");
-  const [stats, setStats] = useState({ activeCount: 0, totalApplicants: 0 });
+  const [stats, setStats] = useState({ activeCount: 0, totalApplicants: 0, acceptanceRate: 0 });
   const [verified, setVerified] = useState(true);
 
   useEffect(() => {
@@ -128,10 +128,15 @@ export function DashboardHome() {
           
           if (profileRes.id) {
             try {
-              const announcementsData = await listAnnouncements({ enterprise: profileRes.id });
+              const [announcementsData, applicationsData] = await Promise.all([
+                listAnnouncements({ enterprise: profileRes.id }),
+                listApplications({ enterprise: profileRes.id }).catch(() => [])
+              ]);
               const activeCount = announcementsData.filter(a => a.status === "ACTIVE").length;
-              const totalApplicants = announcementsData.reduce((acc, ann) => acc + (ann.applicant_count || 0), 0);
-              setStats({ activeCount, totalApplicants });
+              const totalApplicants = applicationsData.length;
+              const acceptedCount = applicationsData.filter(app => app.status === "ACCEPTED").length;
+              const acceptanceRate = totalApplicants > 0 ? Math.round((acceptedCount / totalApplicants) * 100) : 0;
+              setStats({ activeCount, totalApplicants, acceptanceRate });
             } catch (err) {
               console.error("Failed to load statistics:", err);
             }
@@ -195,15 +200,21 @@ export function DashboardHome() {
 
       {/* Dynamic Statistics Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {[
-          { l: "Active announcements", v: String(stats.activeCount) },
-          { l: "Total applicants", v: String(stats.totalApplicants) }
-        ].map((s) => (
-          <div key={s.l} className="linkio-panel px-6 py-5 border border-gray-150/50 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
-            <p className="text-xs text-gray-400 mb-2 font-medium">{s.l}</p>
-            <p className="font-serif text-4xl text-[#3C0713] font-bold">{s.v}</p>
+        <div className="linkio-panel px-6 py-5 border border-gray-150/50 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
+          <p className="text-xs text-gray-400 mb-2 font-medium">Active announcements</p>
+          <p className="font-serif text-4xl text-[#3C0713] font-bold">{stats.activeCount}</p>
+        </div>
+        <div className="linkio-panel px-6 py-5 border border-gray-150/50 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
+          <p className="text-xs text-gray-400 mb-2 font-medium">Total applicants</p>
+          <div className="flex items-baseline gap-2">
+            <span className="font-serif text-4xl text-[#3C0713] font-bold">{stats.totalApplicants}</span>
+            {stats.totalApplicants > 0 && (
+              <span className="text-xs text-emerald-600 bg-emerald-50 border border-emerald-200/50 px-2 py-0.5 rounded-full font-bold">
+                {stats.acceptanceRate}% Selection Rate
+              </span>
+            )}
           </div>
-        ))}
+        </div>
       </div>
 
       {/* Real Recent Announcements Card list */}
@@ -247,7 +258,7 @@ export function DashboardHome() {
                     </span>
                   </div>
                   <h3 className="font-serif font-bold text-gray-900 text-base mb-1.5 group-hover:text-[#3C0713] transition-colors">
-                    {item.role_display || ROLE_DISPLAY[item.role] || (item.role ? item.role.replace("_", " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) : "Web Developer")}
+                    {item.title || item.role_display || ROLE_DISPLAY[item.role] || (item.role ? item.role.replace("_", " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) : "Web Developer")}
                   </h3>
                   <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-gray-500 font-sans">
                     <span>{item.wilaya_display || WILAYA_DISPLAY[item.wilaya] || (item.wilaya ? item.wilaya.charAt(0).toUpperCase() + item.wilaya.slice(1) : "Alger")}</span>
@@ -389,12 +400,15 @@ export function AnnouncementsPage() {
   const [error, setError] = useState("");
   const [actionLoadingId, setActionLoadingId] = useState("");
   const [verified, setVerified] = useState(true);
+  const [profile, setProfile] = useState(null);
 
-  const loadAnnouncements = async () => {
+  const loadAnnouncements = async (profileData = profile) => {
+    if (!profileData) return;
     const statusFilter = filter === "All" ? "ALL" : filter.toUpperCase();
     const data = await listAnnouncements({
       status: statusFilter,
       search: search || undefined,
+      enterprise: profileData.id,
     });
     setJobs(data);
   };
@@ -402,11 +416,13 @@ export function AnnouncementsPage() {
   useEffect(() => {
     let cancelled = false;
     const run = async () => {
+      if (!profile) return;
       try {
         const statusFilter = filter === "All" ? "ALL" : filter.toUpperCase();
         const data = await listAnnouncements({
           status: statusFilter,
           search: search || undefined,
+          enterprise: profile.id,
         });
         if (cancelled) return;
         setJobs(data);
@@ -422,7 +438,7 @@ export function AnnouncementsPage() {
     return () => {
       cancelled = true;
     };
-  }, [filter, search]);
+  }, [filter, search, profile]);
 
   useEffect(() => {
     let cancelled = false;
@@ -430,10 +446,12 @@ export function AnnouncementsPage() {
       try {
         const profileRes = await getMyProfileDetails();
         if (!cancelled && profileRes) {
+          setProfile(profileRes);
           setVerified(profileRes.verified || false);
         }
       } catch (err) {
         console.error("Failed to load profile for verification check:", err);
+        if (!cancelled) setLoading(false);
       }
     };
     checkVerification();
@@ -531,7 +549,7 @@ export function AnnouncementsPage() {
             {jobs.map((j) => (
               <tr key={j.id} className="hover:bg-gray-50">
                 <td className="py-4 px-3 border-b border-gray-100">
-                  <p className="text-sm font-medium">{j.role_display || ROLE_DISPLAY[j.role] || j.role}</p>
+                  <p className="text-sm font-medium">{j.title || j.role_display || ROLE_DISPLAY[j.role] || j.role}</p>
                   <p className="text-xs text-gray-400">
                     {j.wilaya_display || WILAYA_DISPLAY[j.wilaya] || j.wilaya} · {j.job_type_display || JOB_TYPE_DISPLAY[j.job_type] || j.job_type} · {j.enterprise_name}
                   </p>
@@ -595,6 +613,7 @@ export function AnnouncementsPage() {
 export function NewAnnouncementPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
+    title: "",
     role: "GENERAL_PRACTITIONER",
     industry: "TECH",
     job_type: "FULL_TIME",
@@ -641,16 +660,13 @@ export function NewAnnouncementPage() {
       setError("Account pending verification. You cannot post announcements until approved by admin.");
       return;
     }
-    if (!form.address.trim() || !form.description.trim()) {
-      setError("Address and description are required.");
-      return;
-    }
 
     setSubmitting(true);
     setError("");
     try {
       const created = await createAnnouncement({
         ...form,
+        title: form.title.trim(),
         address: form.address.trim(),
         description: form.description.trim(),
         experience_required: Number(form.experience_required || 0),
@@ -702,6 +718,10 @@ export function NewAnnouncementPage() {
           title: "Basic Information",
           content: (
             <>
+              <div className="flex flex-col gap-1 mb-4">
+                <label className="text-sm font-medium text-gray-700">Announcement Title</label>
+                <input disabled={!verified} value={form.title} onChange={(e) => setField("title", e.target.value)} placeholder="e.g. Lead React Developer" className="px-4 py-3 rounded-xl border border-gray-200 bg-cream text-sm outline-none focus:border-navy focus:bg-white w-full disabled:opacity-60 disabled:cursor-not-allowed" />
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1 mb-4">
                   <label className="text-sm font-medium text-gray-700">Job Role</label>
@@ -830,6 +850,13 @@ export function NewAnnouncementPage() {
 const AVATAR_COLORS = ["#fde68a", "#bfdbfe", "#d1fae5", "#e0e7ff", "#fce7f3", "#fef3c7"];
 
 export function FindWorkersPage() {
+  const { uidb64 } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const isProfessional = location.pathname.startsWith("/professional/dashboard");
+  const basePath = isProfessional ? "/professional/dashboard/find-workers" : "/dashboard/find-workers";
+
   const [workers, setWorkers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -866,23 +893,36 @@ export function FindWorkersPage() {
     };
   }, []);
 
-  const handleViewProfile = async (worker) => {
-    setSelectedWorker(worker);
-    setSelectedWorkerDetails(null);
-    setDetailsLoading(true);
-    try {
-      if (worker.uidb64) {
-        const { data } = await api.get(`/profile/${worker.uidb64}/`);
-        setSelectedWorkerDetails(data);
-      } else {
-        setSelectedWorkerDetails(worker);
-      }
-    } catch (err) {
-      console.error("Error fetching profile details:", err);
-      setSelectedWorkerDetails(worker);
-    } finally {
-      setDetailsLoading(false);
+  useEffect(() => {
+    if (!uidb64) {
+      setSelectedWorker(null);
+      setSelectedWorkerDetails(null);
+      return;
     }
+    let cancelled = false;
+    const loadDetails = async () => {
+      setDetailsLoading(true);
+      setError("");
+      try {
+        const { data } = await api.get(`/profile/${uidb64}/`);
+        if (cancelled) return;
+        setSelectedWorker(data);
+        setSelectedWorkerDetails(data);
+      } catch (err) {
+        if (cancelled) return;
+        setError(parseApiError(err, "Unable to load professional profile."));
+      } finally {
+        if (!cancelled) setDetailsLoading(false);
+      }
+    };
+    loadDetails();
+    return () => {
+      cancelled = true;
+    };
+  }, [uidb64]);
+
+  const handleViewProfile = (worker) => {
+    navigate(`${basePath}/${worker.uidb64}`);
   };
 
   const filtered = workers.filter((w) => {
@@ -898,6 +938,241 @@ export function FindWorkersPage() {
       w.wilaya?.toLowerCase().includes(q)
     );
   });
+
+  if (selectedWorker) {
+    const p = selectedWorkerDetails || selectedWorker;
+    const initials = (p.full_name || "??")
+      .replace(/\s+/g, "")
+      .slice(0, 2)
+      .toUpperCase();
+
+    return (
+      <div className="space-y-6 animate-fade-in pb-12">
+        {/* Top Navigation */}
+        <div className="flex items-center justify-between gap-4 border-b border-gray-150 pb-5">
+          <button
+            type="button"
+            onClick={() => {
+              navigate(basePath);
+            }}
+            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-150 hover:bg-slate-50 text-gray-700 rounded-2xl text-xs font-semibold transition-all cursor-pointer shadow-sm"
+          >
+            ← Back to Professionals
+          </button>
+        </div>
+
+        {detailsLoading ? (
+          <div className="py-12 text-center text-gray-500 text-sm bg-white rounded-3xl border border-gray-150/50 shadow-sm">
+            <div className="inline-block w-6 h-6 border-2 border-[#0B1E36] border-t-transparent rounded-full animate-spin mb-3" />
+            <p>Loading full profile details...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+            {/* Left Column: Avatar & Quick Info */}
+            <div className="lg:col-span-4 flex flex-col gap-6">
+              <div className="bg-white rounded-3xl p-6 border border-gray-150/50 shadow-sm flex flex-col items-center text-center">
+                {p.avatar ? (
+                  <img
+                    src={p.avatar}
+                    alt={p.full_name}
+                    className="w-24 h-24 rounded-full object-cover shadow-md border border-gray-100 mb-4"
+                  />
+                ) : (
+                  <div className="w-24 h-24 bg-gradient-to-tr from-[#0B1E36] to-[#1d3d63] text-white rounded-full flex items-center justify-center font-serif font-black text-2xl shadow-md mb-4 border border-white/10">
+                    {initials}
+                  </div>
+                )}
+                <h2 className="font-serif text-xl font-bold text-gray-900 leading-tight mb-1">{p.full_name}</h2>
+                <p className="text-xs text-gray-400 font-medium mb-3.5">{p.professional_title}</p>
+                <span className="px-3 py-1 bg-green-50 text-green-700 border border-green-200/50 text-[10px] font-bold rounded-full uppercase tracking-wider">
+                  {p.years_experience ?? 0} Yrs Experience
+                </span>
+              </div>
+
+              {/* Contact & Location Block */}
+              <div className="bg-white rounded-3xl p-6 border border-gray-150/50 shadow-sm space-y-4">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">Contact & Details</h3>
+                <div className="space-y-3 text-xs text-gray-700">
+                  <div>
+                    <span className="text-gray-400 font-semibold block mb-0.5">Email Address</span>
+                    <p className="font-medium text-gray-900 break-all">{p.email || "Not provided"}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-400 font-semibold block mb-0.5">Phone Number</span>
+                    <p className="font-medium text-gray-900">{p.phone || "Not provided"}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-400 font-semibold block mb-0.5">Wilaya</span>
+                    <p className="font-medium text-gray-900">
+                      {p.wilaya ? p.wilaya.split("_").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ") : "Not provided"}
+                    </p>
+                  </div>
+                  {p.address && (
+                    <div>
+                      <span className="text-gray-400 font-semibold block mb-0.5">Location Address</span>
+                      <p className="font-medium text-gray-900">{p.address}</p>
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-gray-400 font-semibold block mb-0.5">Availability</span>
+                    <p className="font-medium text-gray-900">
+                      {p.availability === "AVAILABLE" ? "Available Now" : p.availability === "OPEN" ? "Open to Opportunities" : "Not Available"}
+                    </p>
+                  </div>
+                  {p.social_links && p.social_links.length > 0 && (
+                    <div className="pt-3 border-t border-gray-100">
+                      <span className="text-gray-400 font-semibold block mb-2">Social Links</span>
+                      <div className="flex flex-wrap gap-2">
+                        {p.social_links.map((link, idx) => {
+                          const platformNames = {
+                            LINKEDIN: "LinkedIn",
+                            GITHUB: "GitHub",
+                            TWITTER: "Twitter",
+                            INSTAGRAM: "Instagram",
+                            YOUTUBE: "YouTube",
+                            WEBSITE: "Website"
+                          };
+                          const label = platformNames[link.platform.toUpperCase()] || link.platform;
+                          return (
+                            <a
+                              key={idx}
+                              href={link.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-2.5 py-1 bg-slate-50 border border-gray-150 hover:bg-slate-100 text-gray-700 rounded-xl font-semibold text-[10px] transition-all cursor-pointer inline-block"
+                            >
+                              {label}
+                            </a>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Bio, Skills, Experience, Education */}
+            <div className="lg:col-span-8 space-y-6">
+              {/* About Me */}
+              <div className="bg-white rounded-3xl p-6 border border-gray-150/50 shadow-sm space-y-3">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">About Professional</h3>
+                <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap">
+                  {p.bio || "No biography provided yet."}
+                </p>
+              </div>
+
+              {/* Skills */}
+              <div className="bg-white rounded-3xl p-6 border border-gray-150/50 shadow-sm space-y-3">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">Professional Skills</h3>
+                {p.skills && p.skills.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {p.skills.map((s, idx) => (
+                      <span key={idx} className="text-xs px-3 py-1 bg-slate-50 border border-gray-150 text-gray-700 rounded-full font-medium">
+                        {s.skill_name || s.name || s}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400 italic">No skills listed yet.</p>
+                )}
+              </div>
+
+              {/* Work Experience */}
+              <div className="bg-white rounded-3xl p-6 border border-gray-150/50 shadow-sm space-y-4">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">Work Experience</h3>
+                {p.work_experiences && p.work_experiences.length > 0 ? (
+                  <div className="space-y-4">
+                    {p.work_experiences.map((exp, idx) => (
+                      <div key={idx} className="flex gap-4 items-start pb-4 last:pb-0 border-b border-slate-50 last:border-0">
+                        <div className="w-8 h-8 rounded-lg bg-[#0B1E36]/5 text-[#0B1E36] flex items-center justify-center font-bold text-xs shrink-0 shadow-inner">
+                          💼
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-gray-900">{exp.job_role}</p>
+                          <p className="text-[11px] text-gray-400 mt-0.5">{exp.company_name}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400 italic">No work experience listed yet.</p>
+                )}
+              </div>
+
+              {/* Education */}
+              <div className="bg-white rounded-3xl p-6 border border-gray-150/50 shadow-sm space-y-4">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">Education Background</h3>
+                {p.educations && p.educations.length > 0 ? (
+                  <div className="space-y-4">
+                    {p.educations.map((edu, idx) => (
+                      <div key={idx} className="flex gap-4 items-start pb-4 last:pb-0 border-b border-slate-50 last:border-0">
+                        <div className="w-8 h-8 rounded-lg bg-[#0B1E36]/5 text-[#0B1E36] flex items-center justify-center font-bold text-xs shrink-0 shadow-inner">
+                          🎓
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-gray-900">{edu.degree} in {edu.field}</p>
+                          <p className="text-[11px] text-gray-400 mt-0.5">{edu.institution}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400 italic">No education listed yet.</p>
+                )}
+              </div>
+
+              {/* Portfolio Links */}
+              {p.portfolios && p.portfolios.length > 0 && (
+                <div className="bg-white rounded-3xl p-6 border border-gray-150/50 shadow-sm space-y-3">
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">Portfolio Links</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {p.portfolios.map((port, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 border border-gray-150 bg-slate-50/30 rounded-2xl">
+                        <span className="text-[11px] text-gray-600 truncate max-w-[200px]">{port.url || port}</span>
+                        <a
+                          href={port.url || port}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] text-navy font-semibold hover:underline"
+                        >
+                          Visit Link →
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Resume / CV Document */}
+              {p.resume_file && (
+                <div className="bg-white rounded-3xl p-6 border border-gray-150/50 shadow-sm space-y-3">
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">Resume / CV Document</h3>
+                  <div className="flex items-center justify-between p-3.5 border border-gray-150 bg-slate-50/50 rounded-2xl">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-xl">📄</span>
+                      <div>
+                        <p className="text-xs font-bold text-gray-700">CV Document</p>
+                        <p className="text-[9px] text-gray-400 font-medium">Uploaded PDF Format</p>
+                      </div>
+                    </div>
+                    <a
+                      href={p.resume_file}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-[#0B1E36] hover:bg-[#132c4d] text-white rounded-xl text-[10px] font-bold shadow-sm transition-all cursor-pointer"
+                    >
+                      View Document →
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -923,9 +1198,7 @@ export function FindWorkersPage() {
         <div className="grid grid-cols-3 gap-4">
           {filtered.map((w, index) => {
             const ini = (w.full_name || "??")
-              .split(" ")
-              .map((p) => p[0])
-              .join("")
+              .replace(/\s+/g, "")
               .slice(0, 2)
               .toUpperCase();
             
@@ -960,210 +1233,6 @@ export function FindWorkersPage() {
               </div>
             );
           })}
-        </div>
-      )}
-
-      {/* Premium Profile Modal */}
-      {selectedWorker && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-deep/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[85vh] overflow-y-auto shadow-2xl relative animate-slide-up flex flex-col font-sans">
-            
-            {/* Modal Header */}
-            <div className="sticky top-0 bg-[#0B1E36] p-6 text-white flex justify-between items-start z-10 rounded-t-3xl">
-              <div>
-                <span className="text-[10px] tracking-wider text-white/60 uppercase block mb-1">Professional Profile</span>
-                <h2 className="font-serif text-2xl font-normal">
-                  {selectedWorker.full_name}
-                </h2>
-                <p className="text-xs text-white/80 mt-1">
-                  {selectedWorker.professional_title} · {selectedWorker.wilaya}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedWorker(null);
-                  setSelectedWorkerDetails(null);
-                }}
-                className="text-white/60 hover:text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 space-y-6 flex-1 text-left">
-              {detailsLoading ? (
-                <div className="py-12 text-center text-gray-500 text-sm">
-                  <div className="inline-block w-6 h-6 border-2 border-[#0B1E36] border-t-transparent rounded-full animate-spin mb-3" />
-                  <p>Loading full profile details...</p>
-                </div>
-              ) : (
-                (() => {
-                  const p = selectedWorkerDetails || selectedWorker;
-                  const initials = (p.full_name || "??")
-                    .split(" ")
-                    .map((part) => part[0])
-                    .join("")
-                    .slice(0, 2)
-                    .toUpperCase();
-                  
-                  return (
-                    <div className="space-y-6">
-                      {/* Quick Overview */}
-                      <div className="flex items-center gap-4 border-b border-gray-150 pb-5">
-                        {p.avatar ? (
-                          <img
-                            src={p.avatar}
-                            alt={p.full_name}
-                            className="w-16 h-16 rounded-full object-cover flex-shrink-0 border border-gray-100"
-                          />
-                        ) : (
-                          <div className="w-16 h-16 bg-[#0B1E36]/10 text-[#0B1E36] rounded-full flex items-center justify-center font-semibold text-lg flex-shrink-0">
-                            {initials}
-                          </div>
-                        )}
-                        <div>
-                          <p className="font-semibold text-gray-900 text-lg">{p.full_name}</p>
-                          <p className="text-sm text-gray-500">{p.professional_title}</p>
-                          <span className="text-xs px-2.5 py-1 bg-green-50 text-green-700 border border-green-150 rounded-full inline-block mt-2 font-medium">
-                            {p.years_experience ?? 0} years experience
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Main Grid Details */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        {/* Info Block */}
-                        <div className="space-y-3">
-                          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Contact & Location</h4>
-                          <div className="space-y-2 text-sm text-gray-700">
-                            <p><span className="text-gray-400 font-medium">Email:</span> {p.email || "Not provided"}</p>
-                            <p><span className="text-gray-400 font-medium">Phone:</span> {p.phone || "Not provided"}</p>
-                            <p><span className="text-gray-400 font-medium">Wilaya:</span> {p.wilaya ? p.wilaya.split("_").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ") : "Not provided"}</p>
-                            <p><span className="text-gray-400 font-medium">Address:</span> {p.address || "Not provided"}</p>
-                            <p><span className="text-gray-400 font-medium">Availability:</span> {p.availability === "AVAILABLE" ? "Available Now" : p.availability === "OPEN" ? "Open to Opportunities" : "Not Available"}</p>
-                          </div>
-                        </div>
-
-                        {/* Skills Block */}
-                        <div className="space-y-3">
-                          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Skills</h4>
-                          {p.skills && p.skills.length > 0 ? (
-                            <div className="flex flex-wrap gap-1.5">
-                              {p.skills.map((s, idx) => (
-                                <span key={idx} className="text-xs px-2.5 py-1 bg-gray-100 text-gray-700 rounded-full font-medium">
-                                  {s.skill_name || s.name || s}
-                                </span>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-xs text-gray-400">No skills listed yet.</p>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Bio / About */}
-                      <div className="space-y-2 border-t border-gray-150 pt-5">
-                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">About Me</h4>
-                        <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">
-                          {p.bio || "No biography provided yet."}
-                        </p>
-                      </div>
-
-                      {/* Work Experience */}
-                      {p.work_experiences && p.work_experiences.length > 0 && (
-                        <div className="space-y-3 border-t border-gray-150 pt-5">
-                          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Work Experience</h4>
-                          <div className="space-y-3">
-                            {p.work_experiences.map((exp, idx) => (
-                              <div key={idx} className="text-sm pb-2 border-b border-gray-50 last:border-0 last:pb-0">
-                                <p className="font-semibold text-gray-900">{exp.job_role}</p>
-                                <p className="text-xs text-gray-500 mt-0.5">{exp.company_name}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Education */}
-                      {p.educations && p.educations.length > 0 && (
-                        <div className="space-y-3 border-t border-gray-150 pt-5">
-                          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Education</h4>
-                          <div className="space-y-3">
-                            {p.educations.map((edu, idx) => (
-                              <div key={idx} className="text-sm pb-2 border-b border-gray-50 last:border-0 last:pb-0">
-                                <p className="font-semibold text-gray-900">{edu.degree} in {edu.field}</p>
-                                <p className="text-xs text-gray-500 mt-0.5">{edu.institution}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Portfolio Links */}
-                      {p.portfolios && p.portfolios.length > 0 && (
-                        <div className="space-y-3 border-t border-gray-150 pt-5">
-                          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Portfolio Links</h4>
-                          <div className="space-y-2">
-                            {p.portfolios.map((port, idx) => (
-                              <div key={idx} className="flex items-center justify-between p-3 border border-gray-100 rounded-xl bg-gray-50/50">
-                                <span className="text-xs text-gray-600 truncate max-w-[280px]">{port.url || port}</span>
-                                <a
-                                  href={port.url || port}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-xs text-navy font-semibold hover:underline"
-                                >
-                                  Visit Link →
-                                </a>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Resume / CV Document */}
-                      {p.resume_file && (
-                        <div className="space-y-3 border-t border-gray-150 pt-5">
-                          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Resume / CV</h4>
-                          <div className="flex items-center justify-between p-3 border border-gray-100 rounded-xl bg-gray-50/50">
-                            <div className="flex items-center gap-2">
-                              <span className="text-lg">📄</span>
-                              <span className="text-xs font-medium text-gray-700">CV Document (PDF)</span>
-                            </div>
-                            <a
-                              href={p.resume_file}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-navy font-semibold hover:underline"
-                            >
-                              View Document →
-                            </a>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()
-              )}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="sticky bottom-0 bg-gray-50 p-4 border-t border-gray-100 flex justify-end gap-3 rounded-b-3xl">
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedWorker(null);
-                  setSelectedWorkerDetails(null);
-                }}
-                className="px-6 py-2.5 bg-[#0B1E36] hover:bg-[#132c4d] text-white rounded-full text-xs font-semibold active:scale-95 transition-all cursor-pointer shadow-md"
-              >
-                Close
-              </button>
-            </div>
-
-          </div>
         </div>
       )}
     </div>
@@ -1541,7 +1610,6 @@ export function CompanyProfilePage() {
   const [company, setCompany] = useState(null);
   const [stats, setStats] = useState({ announcementsCount: 0, applicantsCount: 0 });
   const [applicantIncrease, setApplicantIncrease] = useState(12);
-  const [monthlyStats, setMonthlyStats] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1555,14 +1623,14 @@ export function CompanyProfilePage() {
         let applicantsCount = 0;
 
         try {
-          const announcementsData = await listAnnouncements();
+          const announcementsData = await listAnnouncements({ enterprise: profileData.id });
           announcementsCount = announcementsData.length;
         } catch (err) {
           console.error("Failed to load announcements count:", err);
         }
 
         try {
-          const applicationsData = await listApplications();
+          const applicationsData = await listApplications({ enterprise: profileData.id });
           applicantsCount = applicationsData.length;
 
           if (applicationsData.length > 0) {
@@ -1588,48 +1656,6 @@ export function CompanyProfilePage() {
             } else {
               setApplicantIncrease(0);
             }
-
-            // 2. Calculate dynamic applicant stats for the past 12 months
-            const monthsData = [];
-            
-            // Generate list of past 12 months (e.g. { name: "Jan", month: 0, year: 2026, count: 0 })
-            for (let i = 11; i >= 0; i--) {
-              const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-              monthsData.push({
-                name: d.toLocaleDateString("en-US", { month: "short" }),
-                month: d.getMonth(),
-                year: d.getFullYear(),
-                count: 0
-              });
-            }
-
-            // Group applications by month
-            applicationsData.forEach(app => {
-              const appDate = new Date(app.created_at);
-              const m = appDate.getMonth();
-              const y = appDate.getFullYear();
-              
-              const found = monthsData.find(item => item.month === m && item.year === y);
-              if (found) {
-                found.count += 1;
-              }
-            });
-
-            setMonthlyStats(monthsData);
-          } else {
-            // Generate empty past 12 months
-            const monthsData = [];
-            const now = new Date();
-            for (let i = 11; i >= 0; i--) {
-              const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-              monthsData.push({
-                name: d.toLocaleDateString("en-US", { month: "short" }),
-                month: d.getMonth(),
-                year: d.getFullYear(),
-                count: 0
-              });
-            }
-            setMonthlyStats(monthsData);
           }
         } catch (err) {
           console.error("Failed to load applications count & calculate stats:", err);
@@ -1682,25 +1708,6 @@ export function CompanyProfilePage() {
   };
 
   const initials = getInitials(company.company_name);
-
-  // Path calculations for 12 months curve
-  let pathD = "M 30,130 L 470,130";
-  let fillD = "M 30,130 L 470,130 L 470,140 L 30,140 Z";
-  let currentY = 130;
-  let maxCount = 0;
-
-  if (monthlyStats.length > 0) {
-    maxCount = Math.max(...monthlyStats.map(m => m.count), 0);
-    const points = monthlyStats.map((item, i) => {
-      const x = 30 + i * 40;
-      const y = maxCount > 0 ? 130 - (item.count / maxCount) * 110 : 130;
-      return { x, y };
-    });
-    
-    pathD = `M ${points.map(p => `${p.x},${p.y}`).join(" L ")}`;
-    fillD = `${pathD} L 470,140 L 30,140 Z`;
-    currentY = points[11].y;
-  }
 
   const getIndustryLabel = (ind) => {
     const choices = {
@@ -1887,117 +1894,43 @@ export function CompanyProfilePage() {
               </span>
             </div>
 
-            {/* Grid display of metrics & the beautiful curve */}
-            <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6 md:gap-8 divide-y lg:divide-y-0 lg:divide-x divide-gray-100">
-              
-              {/* Left Side: Real Metrics */}
-              <div className="space-y-8 pr-2 flex flex-col justify-center">
-                {/* Stat 1: Active Announcements */}
-                <div>
-                  <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="opacity-80">
-                      <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-                      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-                    </svg>
-                    Job Announcements
-                  </div>
-                  <div className="font-serif text-3xl font-black text-gray-900 tracking-tight flex items-baseline gap-1.5">
-                    {stats.announcementsCount}
-                    <span className="text-xs text-gray-400 font-sans font-medium">Published</span>
-                  </div>
-                </div>
-
-                {/* Stat 2: Applicants count */}
-                <div>
-                  <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="opacity-80">
-                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                      <circle cx="9" cy="7" r="4" />
-                      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                    </svg>
-                    Total Applicants
-                  </div>
-                  <div className="font-serif text-3xl font-black text-gray-900 tracking-tight flex items-baseline gap-1.5">
-                    {stats.applicantsCount}
-                    <span className={`text-xs font-sans font-medium flex items-center gap-0.5 ${
-                      applicantIncrease >= 0 ? "text-emerald-500" : "text-amber-600"
-                    }`}>
-                      {applicantIncrease >= 0 ? "▲" : "▼"} {Math.abs(applicantIncrease)}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Side: Magnificent SVG Application Curve */}
-              <div className="pt-6 lg:pt-0 lg:pl-8 flex flex-col justify-between">
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-xs text-gray-500 font-bold tracking-wide uppercase">Application Curve (Past 12 Months)</span>
-                  <span className="text-[11px] text-gray-400 font-medium">Updated just now</span>
-                </div>
-                
-                {/* Responsive SVG Container */}
-                <div className="w-full bg-slate-50/50 rounded-2xl p-3 border border-slate-100">
-                  <svg className="w-full h-auto" viewBox="0 0 500 150" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <linearGradient id="chart-gradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#3C0713" stopOpacity="0.25" />
-                        <stop offset="100%" stopColor="#3C0713" stopOpacity="0.0" />
-                      </linearGradient>
-                    </defs>
-                    
-                    {/* Horizontal Grid lines */}
-                    <line x1="30" y1="20" x2="470" y2="20" stroke="#f1f5f9" strokeWidth="1" />
-                    <line x1="30" y1="60" x2="470" y2="60" stroke="#f1f5f9" strokeWidth="1" />
-                    <line x1="30" y1="100" x2="470" y2="100" stroke="#f1f5f9" strokeWidth="1" />
-                    <line x1="30" y1="140" x2="470" y2="140" stroke="#e2e8f0" strokeWidth="1.5" />
-
-                    {/* Gradient Fill under the Curve */}
-                    <path
-                      d={fillD}
-                      fill="url(#chart-gradient)"
-                    />
-                    
-                    {/* Smooth glowing curve stroke */}
-                    <path
-                      d={pathD}
-                      stroke="#3C0713"
-                      strokeWidth="3.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-
-                    {/* Active Glowing Dot at current peak */}
-                    {monthlyStats.length > 0 && (
-                      <>
-                        <circle cx="470" cy={currentY} r="5" fill="#3C0713" stroke="white" strokeWidth="2" />
-                        <circle cx="470" cy={currentY} r="10" fill="#3C0713" fillOpacity="0.15" />
-                      </>
-                    )}
-
-                    {/* Chart axis labels */}
-                    {monthlyStats.map((item, i) => {
-                      const x = 30 + i * 40;
-                      const isCurrent = i === 11;
-                      return (
-                        <text
-                          key={i}
-                          x={x}
-                          y="152"
-                          fill={isCurrent ? "#3C0713" : "#94a3b8"}
-                          fontSize="9"
-                          fontFamily="sans-serif"
-                          textAnchor="middle"
-                          fontWeight={isCurrent ? "bold" : "medium"}
-                        >
-                          {item.name}
-                        </text>
-                      );
-                    })}
+            {/* Grid display of metrics */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
+              {/* Stat 1: Active Announcements */}
+              <div className="bg-slate-50/50 rounded-2xl p-5 border border-slate-100">
+                <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="opacity-80">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
                   </svg>
+                  Job Announcements
+                </div>
+                <div className="font-serif text-3xl font-black text-gray-900 tracking-tight flex items-baseline gap-1.5">
+                  {stats.announcementsCount}
+                  <span className="text-xs text-gray-400 font-sans font-medium">Published</span>
                 </div>
               </div>
 
+              {/* Stat 2: Applicants count */}
+              <div className="bg-slate-50/50 rounded-2xl p-5 border border-slate-100">
+                <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="opacity-80">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                  Total Applicants
+                </div>
+                <div className="font-serif text-3xl font-black text-gray-900 tracking-tight flex items-baseline gap-1.5">
+                  {stats.applicantsCount}
+                  <span className={`text-xs font-sans font-medium flex items-center gap-0.5 ${
+                    applicantIncrease >= 0 ? "text-emerald-500" : "text-amber-600"
+                  }`}>
+                    {applicantIncrease >= 0 ? "▲" : "▼"} {Math.abs(applicantIncrease)}%
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -2142,6 +2075,7 @@ export function ApplicantsPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
+  const [profile, setProfile] = useState(null);
 
   const tabs = ["All", "Pending", "Reviewed", "Accepted", "Rejected"];
 
@@ -2149,7 +2083,11 @@ export function ApplicantsPage() {
     let cancelled = false;
     const fetchAnnouncements = async () => {
       try {
-        const data = await listAnnouncements({ status: "ALL" });
+        const profileData = await getMyProfileDetails();
+        if (cancelled) return;
+        setProfile(profileData);
+
+        const data = await listAnnouncements({ status: "ALL", enterprise: profileData.id });
         if (cancelled) return;
         setAnnouncements(data);
         if (data.length > 0) {
@@ -2178,9 +2116,14 @@ export function ApplicantsPage() {
       try {
         const apps = await listApplications({ announcement: selectedAnnouncementId });
         if (cancelled) return;
-        setApplications(apps);
+        const sortedApps = [...apps].sort((a, b) => {
+          if (a.status === "REVIEWED" && b.status !== "REVIEWED") return 1;
+          if (a.status !== "REVIEWED" && b.status === "REVIEWED") return -1;
+          return 0;
+        });
+        setApplications(sortedApps);
         // Automatically select the first candidate in the fetched list
-        setSelectedApp(apps.length > 0 ? apps[0] : null);
+        setSelectedApp(sortedApps.length > 0 ? sortedApps[0] : null);
       } catch (err) {
         if (cancelled) return;
         setError(parseApiError(err, "Failed to load applications."));
@@ -2211,6 +2154,13 @@ export function ApplicantsPage() {
         (app.applicant_skills && app.applicant_skills.some(s => s.toLowerCase().includes(query)))
       );
     }
+
+    // Sort: Reviewed professionals should appear last in the list
+    filtered = [...filtered].sort((a, b) => {
+      if (a.status === "REVIEWED" && b.status !== "REVIEWED") return 1;
+      if (a.status !== "REVIEWED" && b.status === "REVIEWED") return -1;
+      return 0;
+    });
 
     setFilteredApps(filtered);
   }, [applications, statusFilter, searchTerm]);
@@ -2289,7 +2239,7 @@ export function ApplicantsPage() {
   };
 
   const renderDetailView = () => {
-    const initials = selectedApp.applicant_name ? selectedApp.applicant_name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "?";
+    const initials = selectedApp.applicant_name ? selectedApp.applicant_name.replace(/\s+/g, "").slice(0, 2).toUpperCase() : "?";
     const isPending = selectedApp.status === "PENDING";
     const isReviewed = selectedApp.status === "REVIEWED";
     const isAccepted = selectedApp.status === "ACCEPTED";
@@ -2460,7 +2410,7 @@ export function ApplicantsPage() {
               >
                 {announcements.map((a) => (
                   <option key={a.id} value={a.id}>
-                    {ROLE_DISPLAY[a.role] || a.role} · {a.wilaya_display || WILAYA_DISPLAY[a.wilaya] || a.wilaya}
+                    {a.title || ROLE_DISPLAY[a.role] || a.role} · {a.wilaya_display || WILAYA_DISPLAY[a.wilaya] || a.wilaya}
                   </option>
                 ))}
               </select>

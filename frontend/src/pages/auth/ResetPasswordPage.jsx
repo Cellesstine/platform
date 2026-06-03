@@ -140,7 +140,7 @@ export default function ResetPasswordPage() {
             new_password_confirm: confirm,
           });
         }
-        navigate("/password-reset-success", { state: { fromSettings, returnTo } });
+        navigate("/password-reset-success", { state: { fromSettings, returnTo, portal } });
         return;
       }
 

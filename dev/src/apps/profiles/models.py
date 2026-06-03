@@ -10,6 +10,7 @@ from .utils import(
     Availability,
 )
 
+
 class SocialLink(TimeStampedModel):
     class Platform(models.TextChoices):
         LINKEDIN   = 'LINKEDIN',   'LinkedIn'
@@ -96,7 +97,7 @@ class UserSkill(TimeStampedModel):
     )
 
     class Meta:
-        db_table        = 'profiles_user_skills'
+        db_table = 'profiles_user_skills'
         unique_together = [('individual', 'skill')]
 
     def __str__(self):
